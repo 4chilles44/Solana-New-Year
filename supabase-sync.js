@@ -62,7 +62,6 @@ class FireworkSync {
                     if (status === 'SUBSCRIBED') {
                         this.isConnected = true;
                         console.log('✅ Connected to real-time fireworks sync');
-                        this.showSyncStatus(true);
 
                         // Track this user's presence
                         await this.channel.track({
@@ -71,13 +70,11 @@ class FireworkSync {
                         });
                     } else if (status === 'CHANNEL_ERROR') {
                         console.error('❌ Failed to connect to real-time sync');
-                        this.showSyncStatus(false);
                     }
                 });
 
         } catch (err) {
             console.error('Error initializing Supabase:', err);
-            this.showSyncStatus(false);
         }
     }
 
@@ -178,48 +175,6 @@ class FireworkSync {
         }
 
         counter.textContent = `👥 ${this.viewerCount} ${this.viewerCount === 1 ? 'viewer' : 'viewers'}`;
-    }
-
-    // Show sync status indicator
-    showSyncStatus(connected) {
-        // Create or update status indicator
-        let indicator = document.getElementById('syncStatusIndicator');
-
-        if (!indicator) {
-            indicator = document.createElement('div');
-            indicator.id = 'syncStatusIndicator';
-            indicator.style.cssText = `
-                position: fixed;
-                bottom: 20px;
-                right: 20px;
-                padding: 8px 16px;
-                border-radius: 20px;
-                font-size: 0.85rem;
-                font-weight: 600;
-                z-index: 1000;
-                transition: all 0.3s ease;
-                pointer-events: none;
-            `;
-            document.body.appendChild(indicator);
-        }
-
-        if (connected) {
-            indicator.textContent = '🟢 Live Sync';
-            indicator.style.background = 'rgba(0, 255, 100, 0.2)';
-            indicator.style.border = '1px solid rgba(0, 255, 100, 0.5)';
-            indicator.style.color = '#00ff64';
-
-            // Fade out after 3 seconds
-            setTimeout(() => {
-                indicator.style.opacity = '0.3';
-            }, 3000);
-        } else {
-            indicator.textContent = '🔴 Offline';
-            indicator.style.background = 'rgba(255, 50, 80, 0.2)';
-            indicator.style.border = '1px solid rgba(255, 50, 80, 0.5)';
-            indicator.style.color = '#ff5080';
-            indicator.style.opacity = '1';
-        }
     }
 
     // Disconnect from real-time sync
