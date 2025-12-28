@@ -11,6 +11,7 @@ class FireworkSync {
         this.channel = null;
         this.isConnected = false;
         this.sessionId = this.generateSessionId();
+        this.viewerCount = 0;
 
         // Check if credentials are configured
         if (SUPABASE_URL === 'YOUR_SUPABASE_URL' || SUPABASE_ANON_KEY === 'YOUR_SUPABASE_ANON_KEY') {
@@ -45,11 +46,29 @@ class FireworkSync {
                 .on('broadcast', { event: 'launch' }, (payload) => {
                     this.handleRemoteFirework(payload.payload);
                 })
-                .subscribe((status) => {
+                .on('presence', { event: 'sync' }, () => {
+                    const state = this.channel.presenceState();
+                    this.viewerCount = Object.keys(state).length;
+                    this.updateViewerCount();
+                    console.log('👥 Viewers online:', this.viewerCount);
+                })
+                .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+                    console.log('User joined:', key);
+                })
+                .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+                    console.log('User left:', key);
+                })
+                .subscribe(async (status) => {
                     if (status === 'SUBSCRIBED') {
                         this.isConnected = true;
                         console.log('✅ Connected to real-time fireworks sync');
                         this.showSyncStatus(true);
+
+                        // Track this user's presence
+                        await this.channel.track({
+                            user: this.sessionId,
+                            online_at: new Date().toISOString(),
+                        });
                     } else if (status === 'CHANNEL_ERROR') {
                         console.error('❌ Failed to connect to real-time sync');
                         this.showSyncStatus(false);
@@ -65,10 +84,12 @@ class FireworkSync {
     // Broadcast a firework launch to all users
     async broadcastFirework(x, y, targetY, fireworkType, scale) {
         if (!this.isConnected || !this.channel) {
+            console.warn('Cannot broadcast: not connected');
             return; // Silently fail if not connected
         }
 
         try {
+            console.log('🚀 Broadcasting firework:', { x, y, targetY, fireworkType, scale });
             await this.channel.send({
                 type: 'broadcast',
                 event: 'launch',
@@ -82,6 +103,7 @@ class FireworkSync {
                     timestamp: Date.now()
                 }
             });
+            console.log('✅ Broadcast sent successfully');
         } catch (err) {
             console.error('Error broadcasting firework:', err);
         }
@@ -89,16 +111,21 @@ class FireworkSync {
 
     // Handle firework from remote user
     handleRemoteFirework(data) {
+        console.log('📡 Received remote firework:', data);
+
         // Ignore if it's from our own session (shouldn't happen with self: false, but double check)
         if (data.sessionId === this.sessionId) {
+            console.log('Ignoring own firework');
             return;
         }
 
         // Check if fireworks display is initialized
         if (!window.fireworks || !window.fireworks.started) {
+            console.warn('Fireworks not initialized yet');
             return;
         }
 
+        console.log('🎆 Launching remote firework');
         // Launch the firework using the remote data
         // Use launchFireworkAt method which accepts exact coordinates
         window.fireworks.launchFireworkAt(
@@ -108,6 +135,34 @@ class FireworkSync {
             data.fireworkType,
             data.scale
         );
+    }
+
+    // Update viewer count display
+    updateViewerCount() {
+        let counter = document.getElementById('viewerCounter');
+
+        if (!counter) {
+            counter = document.createElement('div');
+            counter.id = 'viewerCounter';
+            counter.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 20px;
+                padding: 10px 18px;
+                border-radius: 25px;
+                font-size: 0.95rem;
+                font-weight: 600;
+                z-index: 1000;
+                background: rgba(255, 255, 255, 0.1);
+                border: 1px solid rgba(255, 255, 255, 0.3);
+                color: #ffffff;
+                backdrop-filter: blur(10px);
+                transition: all 0.3s ease;
+            `;
+            document.body.appendChild(counter);
+        }
+
+        counter.textContent = `👥 ${this.viewerCount} ${this.viewerCount === 1 ? 'viewer' : 'viewers'}`;
     }
 
     // Show sync status indicator
