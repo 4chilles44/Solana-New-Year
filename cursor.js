@@ -454,7 +454,7 @@ class FireworksDisplay {
         };
 
         // Pre-select the word for this rocket so we can broadcast it
-        if (fireworkType === 'country' && rocket.countryName) {
+        if (fireworkType.type === 'country' && rocket.countryName) {
             rocket.selectedWord = rocket.countryName;
         } else {
             rocket.selectedWord = this.getRandomWord();
