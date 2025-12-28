@@ -163,13 +163,13 @@ class FireworkSync {
 }
 
 // Initialize sync when page loads
-let fireworkSync = null;
+window.fireworkSync = null;
 
 window.addEventListener('load', () => {
     // Wait a bit for Supabase library to load
     setTimeout(() => {
         if (window.supabase) {
-            fireworkSync = new FireworkSync();
+            window.fireworkSync = new FireworkSync();
         } else {
             console.warn('⚠️ Supabase library not loaded. Real-time sync disabled.');
             console.warn('Make sure to include Supabase JS library in your HTML.');
@@ -179,7 +179,7 @@ window.addEventListener('load', () => {
 
 // Clean up on page unload
 window.addEventListener('beforeunload', () => {
-    if (fireworkSync) {
-        fireworkSync.disconnect();
+    if (window.fireworkSync) {
+        window.fireworkSync.disconnect();
     }
 });
