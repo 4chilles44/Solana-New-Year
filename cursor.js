@@ -453,11 +453,18 @@ class FireworksDisplay {
             scale: scale
         };
 
+        // Pre-select the word for this rocket so we can broadcast it
+        if (fireworkType === 'country' && rocket.countryName) {
+            rocket.selectedWord = rocket.countryName;
+        } else {
+            rocket.selectedWord = this.getRandomWord();
+        }
+
         this.rockets.push(rocket);
 
         // Broadcast to other users if sync is enabled
         if (window.fireworkSync && window.fireworkSync.isConnected) {
-            window.fireworkSync.broadcastFirework(x, this.canvas.height + 20, targetY, fireworkType, scale);
+            window.fireworkSync.broadcastFirework(x, this.canvas.height + 20, targetY, fireworkType, scale, rocket.selectedWord);
         }
 
         // Return data for multiplayer sync
@@ -469,7 +476,7 @@ class FireworksDisplay {
     }
 
     // Launch a firework at specific coordinates (for remote sync)
-    launchFireworkAt(x, y, targetY, fireworkType, scale) {
+    launchFireworkAt(x, y, targetY, fireworkType, scale, word) {
         // Calculate height difference to determine arc intensity
         const heightDiff = this.canvas.height - targetY;
         const heightRatio = heightDiff / this.canvas.height;
@@ -499,7 +506,8 @@ class FireworksDisplay {
             drip: fireworkType.drip,
             countryName: fireworkType.countryName || null,
             exploded: false,
-            scale: scale
+            scale: scale,
+            selectedWord: word  // Use the word sent from the remote user
         };
 
         this.rockets.push(rocket);
@@ -568,10 +576,10 @@ class FireworksDisplay {
     }
 
     getRandomWord() {
-        if (customWords.length === 0) {
+        if (window.customWords.length === 0) {
             return null; // No words, no text
         }
-        return customWords[Math.floor(Math.random() * customWords.length)];
+        return window.customWords[Math.floor(Math.random() * window.customWords.length)];
     }
 
     explodeRocket(rocket) {
@@ -697,15 +705,9 @@ class FireworksDisplay {
 
         // Create text particle using object pooling
         // For country fireworks, always show country name
-        // For others, use random word (only if words exist)
-        let word = null;
-        let isCountryText = false;
-        if (isCountry && rocket.countryName) {
-            word = rocket.countryName;
-            isCountryText = true;
-        } else {
-            word = this.getRandomWord();
-        }
+        // Use pre-selected word (already chosen during launch)
+        let word = rocket.selectedWord || null;
+        let isCountryText = isCountry && rocket.countryName;
 
         if (word !== null) {
             const textSize = this.getTextSize();
@@ -1109,7 +1111,8 @@ class FireworksDisplay {
 window.fireworks = null;
 
 // Customizable word list - empty by default
-let customWords = [];
+// Make it global so sync can access it
+window.customWords = [];
 
 window.addEventListener('load', () => {
     const canvas = document.getElementById('fireworksCanvas');
@@ -1148,11 +1151,14 @@ function toggleWalletPanel() {
     walletPanel.classList.toggle('hidden');
 }
 
-function renderWordList() {
+// Make renderWordList globally accessible for sync
+window.renderWordList = function() {
     const wordList = document.getElementById('wordList');
+    if (!wordList) return; // Guard if element doesn't exist yet
+
     wordList.innerHTML = '';
 
-    customWords.forEach((word, index) => {
+    window.customWords.forEach((word, index) => {
         const wordItem = document.createElement('div');
         wordItem.className = 'word-item';
 
@@ -1175,16 +1181,16 @@ function addWord() {
     const input = document.getElementById('newWordInput');
     const newWord = input.value.trim().toUpperCase();
 
-    if (newWord && !customWords.includes(newWord)) {
-        customWords.push(newWord);
-        renderWordList();
+    if (newWord && !window.customWords.includes(newWord)) {
+        window.customWords.push(newWord);
+        window.renderWordList();
         input.value = '';
     }
 }
 
 function removeWord(index) {
-    customWords.splice(index, 1);
-    renderWordList();
+    window.customWords.splice(index, 1);
+    window.renderWordList();
 }
 
 // Function to set user points (call this from outside)
