@@ -119,10 +119,23 @@ class FireworkSync {
             return;
         }
 
-        // Check if fireworks display is initialized
-        if (!window.fireworks || !window.fireworks.started) {
-            console.warn('Fireworks not initialized yet');
+        // Check if fireworks display is initialized and started
+        if (!window.fireworks) {
+            console.warn('Fireworks object not initialized yet');
             return;
+        }
+
+        // Auto-start fireworks if not started yet (for users still on start screen)
+        if (!window.fireworks.started) {
+            console.log('Auto-starting fireworks to show remote launch');
+            // Hide start screen
+            const startScreen = document.getElementById('startScreen');
+            if (startScreen) {
+                startScreen.style.display = 'none';
+            }
+            // Start the fireworks display
+            window.fireworks.started = true;
+            window.fireworks.animate();
         }
 
         console.log('🎆 Launching remote firework');
