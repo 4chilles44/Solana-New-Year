@@ -1105,14 +1105,15 @@ class FireworksDisplay {
     }
 }
 
-let fireworks;
+// Make fireworks globally accessible for sync
+window.fireworks = null;
 
 // Customizable word list - empty by default
 let customWords = [];
 
 window.addEventListener('load', () => {
     const canvas = document.getElementById('fireworksCanvas');
-    fireworks = new FireworksDisplay(canvas);
+    window.fireworks = new FireworksDisplay(canvas);
     renderWordList();
 });
 
@@ -1134,7 +1135,7 @@ document.addEventListener('keydown', (e) => {
 
 function startFireworks() {
     document.getElementById('startScreen').classList.add('hidden');
-    fireworks.started = true;
+    window.fireworks.started = true;
 }
 
 function toggleMenu() {
@@ -1188,21 +1189,21 @@ function removeWord(index) {
 
 // Function to set user points (call this from outside)
 function setUserPoints(points) {
-    if (fireworks) {
-        fireworks.setPoints(points);
+    if (window.fireworks) {
+        window.fireworks.setPoints(points);
     }
 }
 
 // Preset button handler
 function setPreset(value) {
     if (value === 'random') {
-        fireworks.randomMode = true;
+        window.fireworks.randomMode = true;
         document.getElementById('pointsValue').textContent = 'Random';
         document.getElementById('pointsSlider').disabled = true;
         document.getElementById('pointsSlider').style.opacity = '0.5';
     } else {
-        fireworks.randomMode = false;
-        fireworks.setPoints(value);
+        window.fireworks.randomMode = false;
+        window.fireworks.setPoints(value);
         document.getElementById('pointsValue').textContent = value;
         document.getElementById('pointsSlider').value = value;
         document.getElementById('pointsSlider').disabled = false;
@@ -1216,8 +1217,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (slider) {
         slider.addEventListener('input', (e) => {
             const value = parseInt(e.target.value);
-            fireworks.randomMode = false;
-            fireworks.setPoints(value);
+            window.fireworks.randomMode = false;
+            window.fireworks.setPoints(value);
             document.getElementById('pointsValue').textContent = value;
         });
 
