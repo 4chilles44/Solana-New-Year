@@ -255,6 +255,8 @@ class FireworksDisplay {
 
         // Flare tracking for right-click
         this.activeFlares = [];
+        // Chinese lantern tracking
+        this.activeLanterns = [];
         this.mouseX = 0;
         this.mouseY = 0;
 
@@ -262,6 +264,14 @@ class FireworksDisplay {
         document.addEventListener('mousemove', (e) => {
             this.mouseX = e.clientX;
             this.mouseY = e.clientY;
+        });
+
+        // Spacebar to launch Chinese lantern
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && this.started) {
+                e.preventDefault();
+                this.launchLantern();
+            }
         });
 
         // Shared launch handler for both mouse and touch
@@ -326,7 +336,7 @@ class FireworksDisplay {
     }
 
     // Launch a slow flare that follows the mouse
-    launchFlare(startX, startY) {
+    launchFlare(startX, startY, remoteSessionId = null) {
         const flare = {
             x: startX,
             y: this.canvas.height, // Start from bottom like rockets
@@ -342,10 +352,21 @@ class FireworksDisplay {
             collided: false,
             brightness: 1.0,
             showText: false,
-            textLife: 0
+            textLife: 0,
+            sessionId: remoteSessionId // Track which session owns this flare
         };
 
         this.activeFlares.push(flare);
+
+        // Broadcast the flare to other users (only if it's our own flare)
+        if (!remoteSessionId && window.fireworkSync && window.fireworkSync.isConnected) {
+            window.fireworkSync.broadcastFlare(startX, startY);
+        }
+    }
+
+    // Launch a flare at specific position (for remote flares)
+    launchFlareAt(startX, startY, sessionId) {
+        this.launchFlare(startX, startY, sessionId);
     }
 
     // Update flares
@@ -486,6 +507,119 @@ class FireworksDisplay {
 
                 this.ctx.restore();
             }
+        });
+    }
+
+    // Launch a Chinese lantern
+    launchLantern() {
+        const lantern = {
+            x: this.canvas.width / 2 + (Math.random() - 0.5) * 200, // Random position near center
+            y: this.canvas.height,
+            vx: (Math.random() - 0.5) * 20, // Slight horizontal drift
+            vy: -40, // Slow upward velocity
+            size: 20, // Starting size
+            maxSize: 60, // Maximum size
+            life: 1.0,
+            color: { r: 255, g: 100 + Math.random() * 100, b: 50 }, // Orange/red
+            swayOffset: Math.random() * Math.PI * 2, // For swaying motion
+            swaySpeed: 0.5 + Math.random() * 0.5
+        };
+
+        this.activeLanterns.push(lantern);
+    }
+
+    // Update lanterns
+    updateLanterns() {
+        for (let i = this.activeLanterns.length - 1; i >= 0; i--) {
+            const lantern = this.activeLanterns[i];
+
+            // Sway motion (gentle side-to-side)
+            lantern.swayOffset += lantern.swaySpeed * 0.016;
+            const sway = Math.sin(lantern.swayOffset) * 15;
+
+            // Move upward slowly
+            lantern.x += (lantern.vx + sway * 0.5) * 0.016;
+            lantern.y += lantern.vy * 0.016;
+
+            // Grow as it rises
+            const progress = 1 - (lantern.y / this.canvas.height);
+            lantern.size = lantern.maxSize * 0.3 + (lantern.maxSize * 0.7 * progress);
+
+            // Fade out near the top
+            if (lantern.y < this.canvas.height * 0.2) {
+                lantern.life -= 0.01;
+            }
+
+            // Remove if off screen or faded
+            if (lantern.y < -100 || lantern.life <= 0) {
+                this.activeLanterns.splice(i, 1);
+            }
+        }
+    }
+
+    // Draw lanterns
+    drawLanterns() {
+        this.activeLanterns.forEach(lantern => {
+            this.ctx.save();
+            this.ctx.globalAlpha = lantern.life;
+
+            // Lantern body (rounded rectangle)
+            const width = lantern.size * 0.7;
+            const height = lantern.size;
+            const x = lantern.x;
+            const y = lantern.y;
+
+            // Glow effect
+            const glow = this.ctx.createRadialGradient(x, y, 0, x, y, lantern.size);
+            glow.addColorStop(0, `rgba(${lantern.color.r}, ${lantern.color.g}, ${lantern.color.b}, 0.8)`);
+            glow.addColorStop(0.5, `rgba(${lantern.color.r}, ${lantern.color.g}, ${lantern.color.b}, 0.3)`);
+            glow.addColorStop(1, `rgba(${lantern.color.r}, ${lantern.color.g}, ${lantern.color.b}, 0)`);
+
+            this.ctx.fillStyle = glow;
+            this.ctx.beginPath();
+            this.ctx.arc(x, y, lantern.size, 0, Math.PI * 2);
+            this.ctx.fill();
+
+            // Lantern shape (darker outline)
+            this.ctx.fillStyle = `rgba(${lantern.color.r * 0.6}, ${lantern.color.g * 0.6}, ${lantern.color.b * 0.6}, 1)`;
+            this.ctx.strokeStyle = `rgba(${lantern.color.r * 0.3}, ${lantern.color.g * 0.3}, ${lantern.color.b * 0.3}, 1)`;
+            this.ctx.lineWidth = 2;
+
+            // Draw rounded rectangle for lantern
+            this.ctx.beginPath();
+            this.ctx.moveTo(x - width/2 + 5, y - height/2);
+            this.ctx.lineTo(x + width/2 - 5, y - height/2);
+            this.ctx.quadraticCurveTo(x + width/2, y - height/2, x + width/2, y - height/2 + 5);
+            this.ctx.lineTo(x + width/2, y + height/2 - 5);
+            this.ctx.quadraticCurveTo(x + width/2, y + height/2, x + width/2 - 5, y + height/2);
+            this.ctx.lineTo(x - width/2 + 5, y + height/2);
+            this.ctx.quadraticCurveTo(x - width/2, y + height/2, x - width/2, y + height/2 - 5);
+            this.ctx.lineTo(x - width/2, y - height/2 + 5);
+            this.ctx.quadraticCurveTo(x - width/2, y - height/2, x - width/2 + 5, y - height/2);
+            this.ctx.closePath();
+            this.ctx.fill();
+            this.ctx.stroke();
+
+            // Horizontal lines for detail
+            this.ctx.strokeStyle = `rgba(${lantern.color.r * 0.4}, ${lantern.color.g * 0.4}, ${lantern.color.b * 0.4}, 1)`;
+            this.ctx.lineWidth = 1;
+            this.ctx.beginPath();
+            this.ctx.moveTo(x - width/2, y - height/4);
+            this.ctx.lineTo(x + width/2, y - height/4);
+            this.ctx.moveTo(x - width/2, y + height/4);
+            this.ctx.lineTo(x + width/2, y + height/4);
+            this.ctx.stroke();
+
+            // Inner glow (light source)
+            const innerGlow = this.ctx.createRadialGradient(x, y, 0, x, y, width/2);
+            innerGlow.addColorStop(0, `rgba(255, 220, 100, 0.6)`);
+            innerGlow.addColorStop(0.7, `rgba(${lantern.color.r}, ${lantern.color.g}, ${lantern.color.b}, 0.3)`);
+            innerGlow.addColorStop(1, `rgba(${lantern.color.r}, ${lantern.color.g}, ${lantern.color.b}, 0)`);
+
+            this.ctx.fillStyle = innerGlow;
+            this.ctx.fillRect(x - width/2, y - height/2, width, height);
+
+            this.ctx.restore();
         });
     }
 
@@ -956,6 +1090,9 @@ class FireworksDisplay {
         // Update flares
         this.updateFlares();
 
+        // Update lanterns
+        this.updateLanterns();
+
         // Update rockets
         for (let i = this.rockets.length - 1; i >= 0; i--) {
             const rocket = this.rockets[i];
@@ -1062,6 +1199,9 @@ class FireworksDisplay {
 
         // Draw flares
         this.drawFlares();
+
+        // Draw lanterns
+        this.drawLanterns();
 
         // Draw rockets
         for (const rocket of this.rockets) {

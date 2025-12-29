@@ -46,6 +46,9 @@ class FireworkSync {
                 .on('broadcast', { event: 'launch' }, (payload) => {
                     this.handleRemoteFirework(payload.payload);
                 })
+                .on('broadcast', { event: 'flare' }, (payload) => {
+                    this.handleRemoteFlare(payload.payload);
+                })
                 .on('presence', { event: 'sync' }, () => {
                     const state = this.channel.presenceState();
                     this.viewerCount = Object.keys(state).length;
@@ -107,6 +110,31 @@ class FireworkSync {
         }
     }
 
+    // Broadcast a flare launch to all users
+    async broadcastFlare(startX, startY) {
+        if (!this.isConnected || !this.channel) {
+            console.warn('Cannot broadcast: not connected');
+            return;
+        }
+
+        try {
+            console.log('✨ Broadcasting flare:', { startX, startY });
+            await this.channel.send({
+                type: 'broadcast',
+                event: 'flare',
+                payload: {
+                    sessionId: this.sessionId,
+                    startX: startX,
+                    startY: startY,
+                    timestamp: Date.now()
+                }
+            });
+            console.log('✅ Flare broadcast sent successfully');
+        } catch (err) {
+            console.error('Error broadcasting flare:', err);
+        }
+    }
+
     // Handle firework from remote user
     handleRemoteFirework(data) {
         console.log('📡 Received remote firework:', data);
@@ -147,6 +175,38 @@ class FireworkSync {
             data.scale,
             data.word  // Pass the word from the sender
         );
+    }
+
+    // Handle flare from remote user
+    handleRemoteFlare(data) {
+        console.log('✨ Received remote flare:', data);
+
+        // Ignore if it's from our own session
+        if (data.sessionId === this.sessionId) {
+            console.log('Ignoring own flare');
+            return;
+        }
+
+        // Check if fireworks display is initialized and started
+        if (!window.fireworks) {
+            console.warn('Fireworks object not initialized yet');
+            return;
+        }
+
+        // Auto-start fireworks if not started yet
+        if (!window.fireworks.started) {
+            console.log('Auto-starting fireworks to show remote flare');
+            const startScreen = document.getElementById('startScreen');
+            if (startScreen) {
+                startScreen.style.display = 'none';
+            }
+            window.fireworks.started = true;
+            window.fireworks.animate();
+        }
+
+        console.log('✨ Launching remote flare');
+        // Launch the flare using the remote data
+        window.fireworks.launchFlareAt(data.startX, data.startY, data.sessionId);
     }
 
     // Update viewer count display
