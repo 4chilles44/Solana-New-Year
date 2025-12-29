@@ -49,6 +49,9 @@ class FireworkSync {
                 .on('broadcast', { event: 'flare' }, (payload) => {
                     this.handleRemoteFlare(payload.payload);
                 })
+                .on('broadcast', { event: 'flare-position' }, (payload) => {
+                    this.handleRemoteFlarePosition(payload.payload);
+                })
                 .on('broadcast', { event: 'lantern' }, (payload) => {
                     this.handleRemoteLantern(payload.payload);
                 })
@@ -138,6 +141,28 @@ class FireworkSync {
         }
     }
 
+    // Broadcast flare position updates
+    async broadcastFlarePosition(flareX, flareY, targetX, targetY) {
+        if (!this.isConnected || !this.channel) {
+            return;
+        }
+
+        try {
+            await this.channel.send({
+                type: 'broadcast',
+                event: 'flare-position',
+                payload: {
+                    sessionId: this.sessionId,
+                    targetX: targetX,
+                    targetY: targetY,
+                    timestamp: Date.now()
+                }
+            });
+        } catch (err) {
+            // Silently fail for position updates
+        }
+    }
+
     // Handle firework from remote user
     handleRemoteFirework(data) {
         console.log('📡 Received remote firework:', data);
@@ -203,6 +228,22 @@ class FireworkSync {
         } catch (err) {
             console.error('Error broadcasting lantern:', err);
         }
+    }
+
+    // Handle flare position updates from remote user
+    handleRemoteFlarePosition(data) {
+        // Ignore if it's from our own session
+        if (data.sessionId === this.sessionId) {
+            return;
+        }
+
+        // Check if fireworks display is initialized
+        if (!window.fireworks) {
+            return;
+        }
+
+        // Update the remote flare's target position
+        window.fireworks.updateRemoteFlareTarget(data.sessionId, data.targetX, data.targetY);
     }
 
     // Handle flare from remote user

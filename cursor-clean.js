@@ -51,18 +51,83 @@ class FireworksDisplay {
         this.detectUserLocation();
     }
 
-    // Generate random stars
+    // Generate constellation stars (Orion, Big Dipper, etc.)
     generateStars() {
-        const starCount = 100;
-        for (let i = 0; i < starCount; i++) {
+        this.stars = [];
+        this.starRotation = 0; // Track rotation angle
+
+        const centerX = window.innerWidth / 2;
+        const centerY = window.innerHeight * 0.2;
+
+        // Orion's Belt (3 bright stars in a row)
+        const orionBeltY = centerY - 50;
+        this.stars.push(
+            { offsetX: -80, offsetY: orionBeltY - centerY, size: 2.5, opacity: 0.9, twinkleSpeed: 0.003, brightness: 1.2, constellation: 'orion' },
+            { offsetX: 0, offsetY: orionBeltY - centerY, size: 2.5, opacity: 0.9, twinkleSpeed: 0.004, brightness: 1.2, constellation: 'orion' },
+            { offsetX: 80, offsetY: orionBeltY - centerY, size: 2.5, opacity: 0.9, twinkleSpeed: 0.003, brightness: 1.2, constellation: 'orion' }
+        );
+
+        // Orion's shoulders and feet
+        this.stars.push(
+            { offsetX: -60, offsetY: orionBeltY - centerY - 70, size: 2.2, opacity: 0.85, twinkleSpeed: 0.005, brightness: 1.1, constellation: 'orion' }, // Betelgeuse
+            { offsetX: 60, offsetY: orionBeltY - centerY - 65, size: 2, opacity: 0.8, twinkleSpeed: 0.004, brightness: 1.0, constellation: 'orion' },
+            { offsetX: -50, offsetY: orionBeltY - centerY + 80, size: 1.8, opacity: 0.75, twinkleSpeed: 0.006, brightness: 0.9, constellation: 'orion' },
+            { offsetX: 70, offsetY: orionBeltY - centerY + 85, size: 2.1, opacity: 0.8, twinkleSpeed: 0.005, brightness: 1.0, constellation: 'orion' } // Rigel
+        );
+
+        // Big Dipper (7 stars)
+        const dipperX = -window.innerWidth * 0.25;
+        const dipperY = -centerY + 80;
+        this.stars.push(
+            { offsetX: dipperX, offsetY: dipperY, size: 2.3, opacity: 0.85, twinkleSpeed: 0.004, brightness: 1.1 },
+            { offsetX: dipperX + 40, offsetY: dipperY + 10, size: 2.2, opacity: 0.8, twinkleSpeed: 0.005, brightness: 1.0 },
+            { offsetX: dipperX + 75, offsetY: dipperY + 15, size: 2.1, opacity: 0.8, twinkleSpeed: 0.004, brightness: 1.0 },
+            { offsetX: dipperX + 110, offsetY: dipperY + 10, size: 2.2, opacity: 0.85, twinkleSpeed: 0.005, brightness: 1.1 },
+            { offsetX: dipperX + 130, offsetY: dipperY - 20, size: 2, opacity: 0.8, twinkleSpeed: 0.006, brightness: 0.95 },
+            { offsetX: dipperX + 150, offsetY: dipperY - 50, size: 2.1, opacity: 0.8, twinkleSpeed: 0.004, brightness: 1.0 },
+            { offsetX: dipperX + 170, offsetY: dipperY - 85, size: 2.2, opacity: 0.85, twinkleSpeed: 0.005, brightness: 1.1 }
+        );
+
+        // Cassiopeia (W-shaped constellation)
+        const cassiopeiaX = window.innerWidth * 0.25;
+        const cassiopeiaY = -centerY + 60;
+        this.stars.push(
+            { offsetX: cassiopeiaX, offsetY: cassiopeiaY, size: 2.1, opacity: 0.8, twinkleSpeed: 0.004, brightness: 1.0 },
+            { offsetX: cassiopeiaX + 35, offsetY: cassiopeiaY + 40, size: 2, opacity: 0.8, twinkleSpeed: 0.005, brightness: 0.95 },
+            { offsetX: cassiopeiaX + 70, offsetY: cassiopeiaY + 10, size: 2.2, opacity: 0.85, twinkleSpeed: 0.004, brightness: 1.1 },
+            { offsetX: cassiopeiaX + 105, offsetY: cassiopeiaY + 45, size: 2, opacity: 0.8, twinkleSpeed: 0.006, brightness: 0.95 },
+            { offsetX: cassiopeiaX + 140, offsetY: cassiopeiaY + 5, size: 2.1, opacity: 0.8, twinkleSpeed: 0.005, brightness: 1.0 }
+        );
+
+        // Add random background stars
+        for (let i = 0; i < 70; i++) {
             this.stars.push({
-                x: Math.random() * window.innerWidth,
-                y: Math.random() * (window.innerHeight * 0.4), // Top 40% of screen
-                size: Math.random() * 2 + 1, // Larger stars (1-3px instead of 0.5-2px)
-                opacity: Math.random() * 0.5 + 0.3,
-                twinkleSpeed: (Math.random() * 0.008 + 0.004) * (Math.random() > 0.5 ? 1 : -1) // Slower twinkle (reduced from 0.02)
+                offsetX: (Math.random() - 0.5) * window.innerWidth * 1.2,
+                offsetY: (Math.random() - 0.5) * window.innerHeight * 0.6 - centerY,
+                size: Math.random() * 1.5 + 0.8,
+                opacity: Math.random() * 0.4 + 0.3,
+                twinkleSpeed: (Math.random() * 0.008 + 0.004) * (Math.random() > 0.5 ? 1 : -1),
+                brightness: Math.random() * 0.5 + 0.5
             });
         }
+
+        // Calculate initial positions
+        this.updateStarPositions();
+    }
+
+    // Update star positions based on rotation
+    updateStarPositions() {
+        const centerX = window.innerWidth / 2;
+        const centerY = window.innerHeight * 0.2;
+
+        this.stars.forEach(star => {
+            // Rotate around center point
+            const cos = Math.cos(this.starRotation);
+            const sin = Math.sin(this.starRotation);
+
+            star.x = centerX + star.offsetX * cos - star.offsetY * sin;
+            star.y = centerY + star.offsetX * sin + star.offsetY * cos;
+        });
     }
 
     // Generate static city silhouette that spans full width
@@ -340,8 +405,8 @@ class FireworksDisplay {
         const flare = {
             x: startX,
             y: this.canvas.height, // Start from bottom like rockets
-            targetX: this.mouseX,
-            targetY: this.mouseY,
+            targetX: remoteSessionId ? startX : this.mouseX, // Remote flares have fixed target initially
+            targetY: remoteSessionId ? this.canvas.height * 0.3 : this.mouseY,
             vx: 0,
             vy: -200, // Initial upward velocity
             speed: 120, // Slower speed for flare
@@ -353,7 +418,8 @@ class FireworksDisplay {
             brightness: 1.0,
             showText: false,
             textLife: 0,
-            sessionId: remoteSessionId // Track which session owns this flare
+            sessionId: remoteSessionId, // Track which session owns this flare
+            isLocal: !remoteSessionId // Flag to identify local vs remote flares
         };
 
         this.activeFlares.push(flare);
@@ -367,6 +433,16 @@ class FireworksDisplay {
     // Launch a flare at specific position (for remote flares)
     launchFlareAt(startX, startY, sessionId) {
         this.launchFlare(startX, startY, sessionId);
+    }
+
+    // Update remote flare target position
+    updateRemoteFlareTarget(sessionId, targetX, targetY) {
+        // Find the flare belonging to this session
+        const flare = this.activeFlares.find(f => f.sessionId === sessionId && !f.isLocal);
+        if (flare && flare.phase === 'rising') {
+            flare.targetX = targetX;
+            flare.targetY = targetY;
+        }
     }
 
     // Update flares
@@ -413,9 +489,16 @@ class FireworksDisplay {
             }
 
             if (flare.phase === 'rising') {
-                // Update target to current mouse position
-                flare.targetX = this.mouseX;
-                flare.targetY = this.mouseY;
+                // Only update target to mouse position if this is a local flare
+                if (flare.isLocal) {
+                    flare.targetX = this.mouseX;
+                    flare.targetY = this.mouseY;
+
+                    // Broadcast position updates for local flares
+                    if (window.fireworkSync && window.fireworkSync.isConnected && Math.random() < 0.1) {
+                        window.fireworkSync.broadcastFlarePosition(flare.x, flare.y, this.mouseX, this.mouseY);
+                    }
+                }
 
                 // Calculate direction to target
                 const dx = flare.targetX - flare.x;
@@ -512,7 +595,8 @@ class FireworksDisplay {
 
     // Launch a Chinese lantern
     launchLantern(remoteX = null, remoteVx = null, remoteSessionId = null) {
-        const x = remoteX !== null ? remoteX : this.canvas.width / 2 + (Math.random() - 0.5) * 200;
+        // Random position across the full width of the canvas
+        const x = remoteX !== null ? remoteX : Math.random() * this.canvas.width;
         const vx = remoteVx !== null ? remoteVx : (Math.random() - 0.5) * 20;
 
         const lantern = {
@@ -560,9 +644,8 @@ class FireworksDisplay {
             lantern.x += (lantern.vx + sway * 0.5) * 0.016;
             lantern.y += lantern.vy * 0.016;
 
-            // Grow as it rises
-            const progress = 1 - (lantern.y / this.canvas.height);
-            lantern.size = lantern.maxSize * 0.3 + (lantern.maxSize * 0.7 * progress);
+            // Keep constant size (no growing)
+            lantern.size = lantern.maxSize;
 
             // Fade out near the top
             if (lantern.y < this.canvas.height * 0.2) {
@@ -1110,6 +1193,10 @@ class FireworksDisplay {
     }
 
     update(deltaTime) {
+        // Slowly rotate stars (complete rotation every ~10 minutes)
+        this.starRotation += 0.0001 * deltaTime;
+        this.updateStarPositions();
+
         if (!this.started) return;
 
         // Update flares
@@ -1195,9 +1282,10 @@ class FireworksDisplay {
             this.ctx.globalAlpha = star.opacity;
             this.ctx.fillStyle = '#ffffff';
 
-            // Add subtle glow for higher resolution stars
-            this.ctx.shadowBlur = star.size * 2;
-            this.ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
+            // Add subtle glow for higher resolution stars (brighter for constellation stars)
+            const brightness = star.brightness || 1.0;
+            this.ctx.shadowBlur = star.size * 2 * brightness;
+            this.ctx.shadowColor = `rgba(255, 255, 255, ${0.5 * brightness})`;
 
             this.ctx.beginPath();
             this.ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
