@@ -49,6 +49,9 @@ class FireworkSync {
                 .on('broadcast', { event: 'flare' }, (payload) => {
                     this.handleRemoteFlare(payload.payload);
                 })
+                .on('broadcast', { event: 'lantern' }, (payload) => {
+                    this.handleRemoteLantern(payload.payload);
+                })
                 .on('presence', { event: 'sync' }, () => {
                     const state = this.channel.presenceState();
                     this.viewerCount = Object.keys(state).length;
@@ -177,6 +180,31 @@ class FireworkSync {
         );
     }
 
+    // Broadcast a lantern launch to all users
+    async broadcastLantern(x, vx) {
+        if (!this.isConnected || !this.channel) {
+            console.warn('Cannot broadcast: not connected');
+            return;
+        }
+
+        try {
+            console.log('🏮 Broadcasting lantern:', { x, vx });
+            await this.channel.send({
+                type: 'broadcast',
+                event: 'lantern',
+                payload: {
+                    sessionId: this.sessionId,
+                    x: x,
+                    vx: vx,
+                    timestamp: Date.now()
+                }
+            });
+            console.log('✅ Lantern broadcast sent successfully');
+        } catch (err) {
+            console.error('Error broadcasting lantern:', err);
+        }
+    }
+
     // Handle flare from remote user
     handleRemoteFlare(data) {
         console.log('✨ Received remote flare:', data);
@@ -207,6 +235,38 @@ class FireworkSync {
         console.log('✨ Launching remote flare');
         // Launch the flare using the remote data
         window.fireworks.launchFlareAt(data.startX, data.startY, data.sessionId);
+    }
+
+    // Handle lantern from remote user
+    handleRemoteLantern(data) {
+        console.log('🏮 Received remote lantern:', data);
+
+        // Ignore if it's from our own session
+        if (data.sessionId === this.sessionId) {
+            console.log('Ignoring own lantern');
+            return;
+        }
+
+        // Check if fireworks display is initialized and started
+        if (!window.fireworks) {
+            console.warn('Fireworks object not initialized yet');
+            return;
+        }
+
+        // Auto-start fireworks if not started yet
+        if (!window.fireworks.started) {
+            console.log('Auto-starting fireworks to show remote lantern');
+            const startScreen = document.getElementById('startScreen');
+            if (startScreen) {
+                startScreen.style.display = 'none';
+            }
+            window.fireworks.started = true;
+            window.fireworks.animate();
+        }
+
+        console.log('🏮 Launching remote lantern');
+        // Launch the lantern using the remote data
+        window.fireworks.launchLanternAt(data.x, data.vx, data.sessionId);
     }
 
     // Update viewer count display

@@ -58,9 +58,9 @@ class FireworksDisplay {
             this.stars.push({
                 x: Math.random() * window.innerWidth,
                 y: Math.random() * (window.innerHeight * 0.4), // Top 40% of screen
-                size: Math.random() * 1.5 + 0.5,
+                size: Math.random() * 2 + 1, // Larger stars (1-3px instead of 0.5-2px)
                 opacity: Math.random() * 0.5 + 0.3,
-                twinkleSpeed: Math.random() * 0.02 + 0.01
+                twinkleSpeed: (Math.random() * 0.008 + 0.004) * (Math.random() > 0.5 ? 1 : -1) // Slower twinkle (reduced from 0.02)
             });
         }
     }
@@ -511,21 +511,37 @@ class FireworksDisplay {
     }
 
     // Launch a Chinese lantern
-    launchLantern() {
+    launchLantern(remoteX = null, remoteVx = null, remoteSessionId = null) {
+        const x = remoteX !== null ? remoteX : this.canvas.width / 2 + (Math.random() - 0.5) * 200;
+        const vx = remoteVx !== null ? remoteVx : (Math.random() - 0.5) * 20;
+
         const lantern = {
-            x: this.canvas.width / 2 + (Math.random() - 0.5) * 200, // Random position near center
+            x: x,
             y: this.canvas.height,
-            vx: (Math.random() - 0.5) * 20, // Slight horizontal drift
+            vx: vx, // Slight horizontal drift
             vy: -40, // Slow upward velocity
-            size: 20, // Starting size
-            maxSize: 60, // Maximum size
+            size: 12, // Starting size (smaller)
+            maxSize: 35, // Maximum size (smaller)
             life: 1.0,
             color: { r: 255, g: 100 + Math.random() * 100, b: 50 }, // Orange/red
             swayOffset: Math.random() * Math.PI * 2, // For swaying motion
-            swaySpeed: 0.5 + Math.random() * 0.5
+            swaySpeed: 0.5 + Math.random() * 0.5,
+            flickerOffset: Math.random() * Math.PI * 2, // For flame flickering
+            flickerSpeed: 3 + Math.random() * 2, // Faster flicker for natural flame
+            sessionId: remoteSessionId
         };
 
         this.activeLanterns.push(lantern);
+
+        // Broadcast the lantern to other users (only if it's our own lantern)
+        if (!remoteSessionId && window.fireworkSync && window.fireworkSync.isConnected) {
+            window.fireworkSync.broadcastLantern(x, vx);
+        }
+    }
+
+    // Launch a lantern at specific position (for remote lanterns)
+    launchLanternAt(x, vx, sessionId) {
+        this.launchLantern(x, vx, sessionId);
     }
 
     // Update lanterns
@@ -536,6 +552,9 @@ class FireworksDisplay {
             // Sway motion (gentle side-to-side)
             lantern.swayOffset += lantern.swaySpeed * 0.016;
             const sway = Math.sin(lantern.swayOffset) * 15;
+
+            // Flicker animation for natural flame
+            lantern.flickerOffset += lantern.flickerSpeed * 0.016;
 
             // Move upward slowly
             lantern.x += (lantern.vx + sway * 0.5) * 0.016;
@@ -569,39 +588,44 @@ class FireworksDisplay {
             const x = lantern.x;
             const y = lantern.y;
 
-            // Glow effect
-            const glow = this.ctx.createRadialGradient(x, y, 0, x, y, lantern.size);
-            glow.addColorStop(0, `rgba(${lantern.color.r}, ${lantern.color.g}, ${lantern.color.b}, 0.8)`);
-            glow.addColorStop(0.5, `rgba(${lantern.color.r}, ${lantern.color.g}, ${lantern.color.b}, 0.3)`);
+            // Flickering calculation (0.85 to 1.15 brightness variation)
+            const flicker = 0.85 + Math.sin(lantern.flickerOffset) * 0.15 + Math.sin(lantern.flickerOffset * 1.7) * 0.1;
+
+            // Outer glow with flicker
+            const glowRadius = lantern.size * (1.8 + flicker * 0.3);
+            const glow = this.ctx.createRadialGradient(x, y, 0, x, y, glowRadius);
+            glow.addColorStop(0, `rgba(${lantern.color.r}, ${lantern.color.g}, ${lantern.color.b}, ${0.6 * flicker})`);
+            glow.addColorStop(0.4, `rgba(${lantern.color.r}, ${lantern.color.g}, ${lantern.color.b}, ${0.3 * flicker})`);
+            glow.addColorStop(0.7, `rgba(${lantern.color.r}, ${lantern.color.g * 0.8}, ${lantern.color.b * 0.5}, ${0.15 * flicker})`);
             glow.addColorStop(1, `rgba(${lantern.color.r}, ${lantern.color.g}, ${lantern.color.b}, 0)`);
 
             this.ctx.fillStyle = glow;
             this.ctx.beginPath();
-            this.ctx.arc(x, y, lantern.size, 0, Math.PI * 2);
+            this.ctx.arc(x, y, glowRadius, 0, Math.PI * 2);
             this.ctx.fill();
 
-            // Lantern shape (darker outline)
-            this.ctx.fillStyle = `rgba(${lantern.color.r * 0.6}, ${lantern.color.g * 0.6}, ${lantern.color.b * 0.6}, 1)`;
-            this.ctx.strokeStyle = `rgba(${lantern.color.r * 0.3}, ${lantern.color.g * 0.3}, ${lantern.color.b * 0.3}, 1)`;
-            this.ctx.lineWidth = 2;
+            // Lantern shape (darker outline with semi-transparent fill)
+            this.ctx.fillStyle = `rgba(${lantern.color.r * 0.4}, ${lantern.color.g * 0.4}, ${lantern.color.b * 0.4}, 0.8)`;
+            this.ctx.strokeStyle = `rgba(${lantern.color.r * 0.2}, ${lantern.color.g * 0.2}, ${lantern.color.b * 0.2}, 0.9)`;
+            this.ctx.lineWidth = 1.5;
 
             // Draw rounded rectangle for lantern
             this.ctx.beginPath();
-            this.ctx.moveTo(x - width/2 + 5, y - height/2);
-            this.ctx.lineTo(x + width/2 - 5, y - height/2);
-            this.ctx.quadraticCurveTo(x + width/2, y - height/2, x + width/2, y - height/2 + 5);
-            this.ctx.lineTo(x + width/2, y + height/2 - 5);
-            this.ctx.quadraticCurveTo(x + width/2, y + height/2, x + width/2 - 5, y + height/2);
-            this.ctx.lineTo(x - width/2 + 5, y + height/2);
-            this.ctx.quadraticCurveTo(x - width/2, y + height/2, x - width/2, y + height/2 - 5);
-            this.ctx.lineTo(x - width/2, y - height/2 + 5);
-            this.ctx.quadraticCurveTo(x - width/2, y - height/2, x - width/2 + 5, y - height/2);
+            this.ctx.moveTo(x - width/2 + 4, y - height/2);
+            this.ctx.lineTo(x + width/2 - 4, y - height/2);
+            this.ctx.quadraticCurveTo(x + width/2, y - height/2, x + width/2, y - height/2 + 4);
+            this.ctx.lineTo(x + width/2, y + height/2 - 4);
+            this.ctx.quadraticCurveTo(x + width/2, y + height/2, x + width/2 - 4, y + height/2);
+            this.ctx.lineTo(x - width/2 + 4, y + height/2);
+            this.ctx.quadraticCurveTo(x - width/2, y + height/2, x - width/2, y + height/2 - 4);
+            this.ctx.lineTo(x - width/2, y - height/2 + 4);
+            this.ctx.quadraticCurveTo(x - width/2, y - height/2, x - width/2 + 4, y - height/2);
             this.ctx.closePath();
             this.ctx.fill();
             this.ctx.stroke();
 
             // Horizontal lines for detail
-            this.ctx.strokeStyle = `rgba(${lantern.color.r * 0.4}, ${lantern.color.g * 0.4}, ${lantern.color.b * 0.4}, 1)`;
+            this.ctx.strokeStyle = `rgba(${lantern.color.r * 0.3}, ${lantern.color.g * 0.3}, ${lantern.color.b * 0.3}, 0.6)`;
             this.ctx.lineWidth = 1;
             this.ctx.beginPath();
             this.ctx.moveTo(x - width/2, y - height/4);
@@ -610,10 +634,11 @@ class FireworksDisplay {
             this.ctx.lineTo(x + width/2, y + height/4);
             this.ctx.stroke();
 
-            // Inner glow (light source)
-            const innerGlow = this.ctx.createRadialGradient(x, y, 0, x, y, width/2);
-            innerGlow.addColorStop(0, `rgba(255, 220, 100, 0.6)`);
-            innerGlow.addColorStop(0.7, `rgba(${lantern.color.r}, ${lantern.color.g}, ${lantern.color.b}, 0.3)`);
+            // Inner flame glow with flickering
+            const innerGlow = this.ctx.createRadialGradient(x, y + height * 0.1, 0, x, y, width * 0.6);
+            innerGlow.addColorStop(0, `rgba(255, 255, 220, ${0.9 * flicker})`); // Bright white-yellow core
+            innerGlow.addColorStop(0.3, `rgba(255, 200, 100, ${0.7 * flicker})`); // Warm yellow
+            innerGlow.addColorStop(0.6, `rgba(${lantern.color.r}, ${lantern.color.g}, ${lantern.color.b}, ${0.5 * flicker})`);
             innerGlow.addColorStop(1, `rgba(${lantern.color.r}, ${lantern.color.g}, ${lantern.color.b}, 0)`);
 
             this.ctx.fillStyle = innerGlow;
@@ -1169,12 +1194,17 @@ class FireworksDisplay {
             this.ctx.save();
             this.ctx.globalAlpha = star.opacity;
             this.ctx.fillStyle = '#ffffff';
+
+            // Add subtle glow for higher resolution stars
+            this.ctx.shadowBlur = star.size * 2;
+            this.ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
+
             this.ctx.beginPath();
             this.ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
             this.ctx.fill();
             this.ctx.restore();
 
-            // Twinkle effect
+            // Slower twinkle effect
             star.opacity += star.twinkleSpeed;
             if (star.opacity > 0.8 || star.opacity < 0.3) {
                 star.twinkleSpeed *= -1;
