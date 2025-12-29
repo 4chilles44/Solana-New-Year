@@ -517,10 +517,14 @@ class FireworksDisplay {
                     flare.vy += (targetVy - flare.vy) * 0.05;
                 }
             } else {
-                // Falling phase - SLOW fall
-                flare.vy += 30; // Much slower gravity
-                flare.vx *= 0.99; // Less air resistance
-                flare.life -= 0.003; // Slower fade
+                // Falling phase - flame-like fizzle
+                flare.vy += 20; // Slow gravity
+                flare.vx *= 0.98; // Air resistance
+                flare.life -= 0.008; // Faster fade when falling
+
+                // Add random flickering motion like a dying flame
+                flare.vx += (Math.random() - 0.5) * 10;
+                flare.vy += (Math.random() - 0.5) * 5;
             }
 
             // Update position
@@ -543,28 +547,69 @@ class FireworksDisplay {
     // Draw flares
     drawFlares() {
         this.activeFlares.forEach(flare => {
-            // Draw trail
+            // Draw flame-like trail with varying sizes and opacity
             flare.trail.forEach((point, index) => {
-                const alpha = (index / flare.trail.length) * flare.life * flare.brightness;
-                const size = (3 + (index / flare.trail.length) * 2) * Math.min(flare.brightness, 1.5);
+                const progress = index / flare.trail.length;
+                const alpha = progress * flare.life * flare.brightness;
 
-                this.ctx.fillStyle = `rgba(${flare.color.r}, ${flare.color.g}, ${flare.color.b}, ${alpha})`;
+                // Flame gets smaller toward the tail
+                const baseSize = flare.phase === 'falling' ?
+                    (8 - progress * 6) : // Falling: taper quickly
+                    (3 + progress * 2);   // Rising: grow slightly
+
+                const size = baseSize * Math.min(flare.brightness, 1.5);
+
+                // Flame colors: white-yellow-orange gradient
+                let r, g, b;
+                if (flare.collided) {
+                    r = flare.color.r;
+                    g = flare.color.g;
+                    b = flare.color.b;
+                } else if (progress > 0.7) {
+                    // Hot white/yellow core
+                    r = 255;
+                    g = 255;
+                    b = 200 + progress * 55;
+                } else {
+                    // Orange/yellow tail
+                    r = 255;
+                    g = 220 - (1 - progress) * 100;
+                    b = 100;
+                }
+
+                // Draw with glow
+                this.ctx.save();
+                this.ctx.globalAlpha = alpha;
+                this.ctx.shadowBlur = size * 2;
+                this.ctx.shadowColor = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+                this.ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 1)`;
                 this.ctx.beginPath();
                 this.ctx.arc(point.x, point.y, size, 0, Math.PI * 2);
                 this.ctx.fill();
+                this.ctx.restore();
             });
 
-            // Draw flare head (brighter with collision effect)
-            const size = 8 * Math.min(flare.brightness, 2.0);
-            const grd = this.ctx.createRadialGradient(flare.x, flare.y, 0, flare.x, flare.y, size);
-            grd.addColorStop(0, `rgba(255, 255, 255, ${flare.life * flare.brightness})`);
-            grd.addColorStop(0.3, `rgba(${flare.color.r}, ${flare.color.g}, ${flare.color.b}, ${flare.life})`);
+            // Draw flare head (brightest point)
+            const size = flare.phase === 'falling' ? 6 : 8;
+            const headSize = size * Math.min(flare.brightness, 2.0);
+
+            this.ctx.save();
+            this.ctx.globalAlpha = flare.life;
+            this.ctx.shadowBlur = headSize * 3;
+            this.ctx.shadowColor = flare.collided ?
+                `rgba(255, 255, 255, ${flare.brightness})` :
+                `rgba(255, 220, 100, ${flare.brightness})`;
+
+            const grd = this.ctx.createRadialGradient(flare.x, flare.y, 0, flare.x, flare.y, headSize);
+            grd.addColorStop(0, `rgba(255, 255, 255, ${Math.min(flare.brightness, 1.0)})`);
+            grd.addColorStop(0.4, `rgba(${flare.color.r}, ${flare.color.g}, ${flare.color.b}, 1)`);
             grd.addColorStop(1, `rgba(${flare.color.r}, ${flare.color.g}, ${flare.color.b}, 0)`);
 
             this.ctx.fillStyle = grd;
             this.ctx.beginPath();
-            this.ctx.arc(flare.x, flare.y, size, 0, Math.PI * 2);
+            this.ctx.arc(flare.x, flare.y, headSize, 0, Math.PI * 2);
             this.ctx.fill();
+            this.ctx.restore();
 
             // Draw "HAPPY NEW YEAR" text on collision
             if (flare.showText && flare.textLife > 0) {
