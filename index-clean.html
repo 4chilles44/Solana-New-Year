@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Year's Fireworks 2025</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <canvas id="fireworksCanvas"></canvas>
+
+    <!-- Custom Cursor -->
+    <div class="custom-cursor" id="customCursor"></div>
+
+    <div id="startScreen" class="start-screen">
+        <div class="start-content">
+            <h1 class="game-title">New Year's Fireworks</h1>
+            <p class="game-subtitle">Light up the sky with spectacular fireworks</p>
+            <p class="game-author">Celebrate 2025 with the world</p>
+            <button class="start-btn" onclick="startFireworks()">Start Show</button>
+            <div class="controls">
+                <p>Click anywhere on screen to launch fireworks</p>
+                <p>Watch the magic unfold</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="cursor-clean.js"></script>
+    <script src="supabase-sync-clean.js"></script>
+</body>
+</html>
