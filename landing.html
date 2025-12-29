@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Year's Fireworks 2025</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .landing-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        }
+
+        .landing-content {
+            text-align: center;
+            max-width: 800px;
+            padding: 40px;
+        }
+
+        .landing-title {
+            font-size: 4rem;
+            font-weight: 900;
+            background: linear-gradient(45deg, #FFD700, #FFA500, #FF69B4, #00CED1);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradient 3s ease infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .landing-subtitle {
+            font-size: 1.5rem;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 60px;
+        }
+
+        .version-selector {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .version-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 40px 30px;
+            width: 320px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .version-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .version-card:hover::before {
+            left: 100%;
+        }
+
+        .version-card:hover {
+            transform: translateY(-10px);
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .version-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+        }
+
+        .version-name {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 15px;
+        }
+
+        .version-desc {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .version-features {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .version-features li {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .version-features li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #00ff88;
+        }
+
+        .version-badge {
+            display: inline-block;
+            background: rgba(255, 215, 0, 0.2);
+            border: 1px solid rgba(255, 215, 0, 0.5);
+            color: #FFD700;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .badge-free {
+            background: rgba(0, 255, 136, 0.2);
+            border-color: rgba(0, 255, 136, 0.5);
+            color: #00ff88;
+        }
+
+        @media (max-width: 768px) {
+            .landing-title {
+                font-size: 2.5rem;
+            }
+
+            .landing-subtitle {
+                font-size: 1.2rem;
+            }
+
+            .version-card {
+                width: 100%;
+                max-width: 320px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="landing-container">
+        <div class="landing-content">
+            <h1 class="landing-title">New Year's Fireworks 2025</h1>
+            <p class="landing-subtitle">Choose your celebration experience</p>
+
+            <div class="version-selector">
+                <!-- Clean Version -->
+                <div class="version-card" onclick="window.location.href='index-clean.html'">
+                    <div class="version-icon">🎆</div>
+                    <h2 class="version-name">Classic Fireworks</h2>
+                    <p class="version-desc">Pure celebration with synchronized fireworks from around the world</p>
+                    <ul class="version-features">
+                        <li>Real-time global sync</li>
+                        <li>Country-themed displays</li>
+                        <li>Family-friendly</li>
+                        <li>Unlimited launches</li>
+                    </ul>
+                    <span class="version-badge badge-free">FREE • NO LOGIN</span>
+                </div>
+
+                <!-- Solana Version -->
+                <div class="version-card" onclick="showWarning()">
+                    <div class="version-icon">💎</div>
+                    <h2 class="version-name">Solana New Year</h2>
+                    <p class="version-desc">Send custom messages to the world with your fireworks</p>
+                    <ul class="version-features">
+                        <li>Custom word messages</li>
+                        <li>Wallet integration</li>
+                        <li>Premium features</li>
+                        <li>Token-gated rockets</li>
+                    </ul>
+                    <span class="version-badge">PREMIUM • WALLET REQUIRED</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Warning Modal -->
+    <div id="warningModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); z-index: 20000; align-items: center; justify-content: center;">
+        <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 50px; border-radius: 20px; max-width: 600px; margin: 20px; border: 2px solid rgba(255, 69, 0, 0.5);">
+            <div style="text-align: center; font-size: 4rem; margin-bottom: 20px;">⚠️</div>
+            <h2 style="color: #ff4444; font-size: 2rem; margin-bottom: 20px; text-align: center;">Content Warning</h2>
+            <div style="color: rgba(255, 255, 255, 0.9); font-size: 1.1rem; line-height: 1.8; margin-bottom: 30px;">
+                <p style="margin-bottom: 15px;"><strong>This is the Wild West.</strong></p>
+                <p style="margin-bottom: 15px;">Users can submit custom messages that will be displayed as fireworks. Content is unmoderated and may contain:</p>
+                <ul style="margin-left: 20px; margin-bottom: 15px;">
+                    <li>Offensive language</li>
+                    <li>Controversial opinions</li>
+                    <li>Mature themes</li>
+                    <li>Unfiltered user-generated content</li>
+                </ul>
+                <p style="margin-bottom: 15px;"><strong>By continuing, you acknowledge that you are accessing user-generated content at your own discretion.</strong></p>
+                <p style="color: rgba(255, 255, 255, 0.6); font-size: 0.9rem;">This experience is intended for mature audiences. If you prefer a family-friendly experience, please select the Classic Fireworks version.</p>
+            </div>
+            <div style="display: flex; gap: 20px; justify-content: center;">
+                <button onclick="closeWarning()" style="background: rgba(255, 255, 255, 0.1); border: 2px solid rgba(255, 255, 255, 0.3); color: #fff; padding: 15px 30px; border-radius: 10px; font-size: 1rem; cursor: pointer; transition: all 0.3s;">
+                    Go Back
+                </button>
+                <button onclick="acceptWarning()" style="background: linear-gradient(45deg, #ff6b00, #ff0055); border: none; color: #fff; padding: 15px 30px; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s;">
+                    I Understand, Continue
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showWarning() {
+            const modal = document.getElementById('warningModal');
+            modal.style.display = 'flex';
+        }
+
+        function closeWarning() {
+            const modal = document.getElementById('warningModal');
+            modal.style.display = 'none';
+        }
+
+        function acceptWarning() {
+            window.location.href = 'index.html';
+        }
+
+        // Close modal on ESC key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeWarning();
+            }
+        });
+    </script>
+</body>
+</html>
