@@ -253,6 +253,17 @@ class FireworksDisplay {
         // Track if random mode is enabled
         this.randomMode = true;
 
+        // Flare tracking for right-click
+        this.activeFlares = [];
+        this.mouseX = 0;
+        this.mouseY = 0;
+
+        // Track mouse position
+        document.addEventListener('mousemove', (e) => {
+            this.mouseX = e.clientX;
+            this.mouseY = e.clientY;
+        });
+
         // Shared launch handler for both mouse and touch
         const handleLaunch = (x) => {
             if (!this.started) return;
@@ -290,9 +301,19 @@ class FireworksDisplay {
             this.launchRocket(x);
         };
 
-        // Mouse events
+        // Left click - normal fireworks
         document.addEventListener('mousedown', (e) => {
-            handleLaunch(e.clientX);
+            if (e.button === 0) { // Left click only
+                handleLaunch(e.clientX);
+            }
+        });
+
+        // Right click - launch flare
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault(); // Prevent context menu
+            if (!this.started) return;
+
+            this.launchFlare(e.clientX, e.clientY);
         });
 
         // Touch events for mobile
@@ -301,6 +322,101 @@ class FireworksDisplay {
             if (e.touches.length > 0) {
                 handleLaunch(e.touches[0].clientX);
             }
+        });
+    }
+
+    // Launch a slow flare that follows the mouse
+    launchFlare(startX, startY) {
+        const flare = {
+            x: startX,
+            y: startY,
+            targetX: this.mouseX,
+            targetY: this.mouseY,
+            vx: 0,
+            vy: 0,
+            speed: 150, // Slower speed for flare
+            trail: [],
+            color: { r: 255, g: 220, b: 100 }, // Golden color
+            life: 1.0,
+            phase: 'rising', // 'rising' or 'falling'
+            reachedTarget: false
+        };
+
+        this.activeFlares.push(flare);
+    }
+
+    // Update flares
+    updateFlares() {
+        for (let i = this.activeFlares.length - 1; i >= 0; i--) {
+            const flare = this.activeFlares[i];
+
+            if (flare.phase === 'rising') {
+                // Update target to current mouse position
+                flare.targetX = this.mouseX;
+                flare.targetY = this.mouseY;
+
+                // Calculate direction to target
+                const dx = flare.targetX - flare.x;
+                const dy = flare.targetY - flare.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+
+                if (dist < 20) {
+                    // Reached target, start falling
+                    flare.phase = 'falling';
+                    flare.vy = 0;
+                } else {
+                    // Move towards target slowly
+                    flare.vx = (dx / dist) * flare.speed;
+                    flare.vy = (dy / dist) * flare.speed;
+                }
+            } else {
+                // Falling phase
+                flare.vy += 150; // Gravity
+                flare.vx *= 0.98; // Air resistance
+                flare.life -= 0.008;
+            }
+
+            // Update position
+            flare.x += flare.vx * 0.016;
+            flare.y += flare.vy * 0.016;
+
+            // Add to trail
+            flare.trail.push({ x: flare.x, y: flare.y, alpha: 1.0 });
+            if (flare.trail.length > 30) {
+                flare.trail.shift();
+            }
+
+            // Remove if off screen or faded
+            if (flare.y > this.canvas.height + 50 || flare.life <= 0) {
+                this.activeFlares.splice(i, 1);
+            }
+        }
+    }
+
+    // Draw flares
+    drawFlares() {
+        this.activeFlares.forEach(flare => {
+            // Draw trail
+            flare.trail.forEach((point, index) => {
+                const alpha = (index / flare.trail.length) * flare.life;
+                const size = 3 + (index / flare.trail.length) * 2;
+
+                this.ctx.fillStyle = `rgba(${flare.color.r}, ${flare.color.g}, ${flare.color.b}, ${alpha})`;
+                this.ctx.beginPath();
+                this.ctx.arc(point.x, point.y, size, 0, Math.PI * 2);
+                this.ctx.fill();
+            });
+
+            // Draw flare head (brighter)
+            const grd = this.ctx.createRadialGradient(flare.x, flare.y, 0, flare.x, flare.y, 8);
+            grd.addColorStop(0, `rgba(255, 255, 255, ${flare.life})`);
+            grd.addColorStop(0.3, `rgba(${flare.color.r}, ${flare.color.g}, ${flare.color.b}, ${flare.life})`);
+            grd.addColorStop(1, `rgba(${flare.color.r}, ${flare.color.g}, ${flare.color.b}, 0)`);
+
+            this.ctx.fillStyle = grd;
+            this.ctx.beginPath();
+            this.ctx.arc(flare.x, flare.y, 8, 0, Math.PI * 2);
+            this.ctx.fill();
         });
     }
 
@@ -768,6 +884,9 @@ class FireworksDisplay {
     update(deltaTime) {
         if (!this.started) return;
 
+        // Update flares
+        this.updateFlares();
+
         // Update rockets
         for (let i = this.rockets.length - 1; i >= 0; i--) {
             const rocket = this.rockets[i];
@@ -871,6 +990,9 @@ class FireworksDisplay {
         this.ctx.restore();
 
         if (!this.started) return;
+
+        // Draw flares
+        this.drawFlares();
 
         // Draw rockets
         for (const rocket of this.rockets) {
