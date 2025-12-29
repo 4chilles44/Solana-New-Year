@@ -329,17 +329,20 @@ class FireworksDisplay {
     launchFlare(startX, startY) {
         const flare = {
             x: startX,
-            y: startY,
+            y: this.canvas.height, // Start from bottom like rockets
             targetX: this.mouseX,
             targetY: this.mouseY,
             vx: 0,
-            vy: 0,
-            speed: 150, // Slower speed for flare
+            vy: -200, // Initial upward velocity
+            speed: 120, // Slower speed for flare
             trail: [],
             color: { r: 255, g: 220, b: 100 }, // Golden color
             life: 1.0,
             phase: 'rising', // 'rising' or 'falling'
-            reachedTarget: false
+            collided: false,
+            brightness: 1.0,
+            showText: false,
+            textLife: 0
         };
 
         this.activeFlares.push(flare);
@@ -347,8 +350,46 @@ class FireworksDisplay {
 
     // Update flares
     updateFlares() {
+        // Check for collisions between flares
+        for (let i = 0; i < this.activeFlares.length; i++) {
+            for (let j = i + 1; j < this.activeFlares.length; j++) {
+                const flare1 = this.activeFlares[i];
+                const flare2 = this.activeFlares[j];
+
+                if (!flare1.collided && !flare2.collided) {
+                    const dx = flare1.x - flare2.x;
+                    const dy = flare1.y - flare2.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist < 30) {
+                        // Collision! Light up both flares
+                        flare1.collided = true;
+                        flare2.collided = true;
+                        flare1.brightness = 3.0;
+                        flare2.brightness = 3.0;
+                        flare1.showText = true;
+                        flare2.showText = true;
+                        flare1.textLife = 3.0;
+                        flare2.textLife = 3.0;
+                        flare1.color = { r: 255, g: 255, b: 255 }; // White flash
+                        flare2.color = { r: 255, g: 255, b: 255 };
+                    }
+                }
+            }
+        }
+
         for (let i = this.activeFlares.length - 1; i >= 0; i--) {
             const flare = this.activeFlares[i];
+
+            // Fade brightness back down after collision
+            if (flare.brightness > 1.0) {
+                flare.brightness *= 0.95;
+            }
+
+            // Fade text
+            if (flare.textLife > 0) {
+                flare.textLife -= 0.016;
+            }
 
             if (flare.phase === 'rising') {
                 // Update target to current mouse position
@@ -360,20 +401,22 @@ class FireworksDisplay {
                 const dy = flare.targetY - flare.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
 
-                if (dist < 20) {
+                if (dist < 20 || flare.vy > 0) {
                     // Reached target, start falling
                     flare.phase = 'falling';
                     flare.vy = 0;
                 } else {
-                    // Move towards target slowly
-                    flare.vx = (dx / dist) * flare.speed;
-                    flare.vy = (dy / dist) * flare.speed;
+                    // Move towards target slowly with gentle acceleration
+                    const targetVx = (dx / dist) * flare.speed;
+                    const targetVy = (dy / dist) * flare.speed;
+                    flare.vx += (targetVx - flare.vx) * 0.05;
+                    flare.vy += (targetVy - flare.vy) * 0.05;
                 }
             } else {
-                // Falling phase
-                flare.vy += 150; // Gravity
-                flare.vx *= 0.98; // Air resistance
-                flare.life -= 0.008;
+                // Falling phase - SLOW fall
+                flare.vy += 30; // Much slower gravity
+                flare.vx *= 0.99; // Less air resistance
+                flare.life -= 0.003; // Slower fade
             }
 
             // Update position
@@ -382,7 +425,7 @@ class FireworksDisplay {
 
             // Add to trail
             flare.trail.push({ x: flare.x, y: flare.y, alpha: 1.0 });
-            if (flare.trail.length > 30) {
+            if (flare.trail.length > 40) {
                 flare.trail.shift();
             }
 
@@ -398,8 +441,8 @@ class FireworksDisplay {
         this.activeFlares.forEach(flare => {
             // Draw trail
             flare.trail.forEach((point, index) => {
-                const alpha = (index / flare.trail.length) * flare.life;
-                const size = 3 + (index / flare.trail.length) * 2;
+                const alpha = (index / flare.trail.length) * flare.life * flare.brightness;
+                const size = (3 + (index / flare.trail.length) * 2) * Math.min(flare.brightness, 1.5);
 
                 this.ctx.fillStyle = `rgba(${flare.color.r}, ${flare.color.g}, ${flare.color.b}, ${alpha})`;
                 this.ctx.beginPath();
@@ -407,16 +450,42 @@ class FireworksDisplay {
                 this.ctx.fill();
             });
 
-            // Draw flare head (brighter)
-            const grd = this.ctx.createRadialGradient(flare.x, flare.y, 0, flare.x, flare.y, 8);
-            grd.addColorStop(0, `rgba(255, 255, 255, ${flare.life})`);
+            // Draw flare head (brighter with collision effect)
+            const size = 8 * Math.min(flare.brightness, 2.0);
+            const grd = this.ctx.createRadialGradient(flare.x, flare.y, 0, flare.x, flare.y, size);
+            grd.addColorStop(0, `rgba(255, 255, 255, ${flare.life * flare.brightness})`);
             grd.addColorStop(0.3, `rgba(${flare.color.r}, ${flare.color.g}, ${flare.color.b}, ${flare.life})`);
             grd.addColorStop(1, `rgba(${flare.color.r}, ${flare.color.g}, ${flare.color.b}, 0)`);
 
             this.ctx.fillStyle = grd;
             this.ctx.beginPath();
-            this.ctx.arc(flare.x, flare.y, 8, 0, Math.PI * 2);
+            this.ctx.arc(flare.x, flare.y, size, 0, Math.PI * 2);
             this.ctx.fill();
+
+            // Draw "HAPPY NEW YEAR" text on collision
+            if (flare.showText && flare.textLife > 0) {
+                this.ctx.save();
+                this.ctx.globalAlpha = Math.min(flare.textLife / 3.0, 1.0);
+                this.ctx.font = 'bold 60px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+
+                // Glow effect
+                this.ctx.shadowBlur = 30;
+                this.ctx.shadowColor = '#FFD700';
+
+                // Outline
+                this.ctx.strokeStyle = '#FFD700';
+                this.ctx.lineWidth = 4;
+                this.ctx.strokeText('HAPPY NEW YEAR', flare.x, flare.y - 40);
+
+                // Fill
+                this.ctx.fillStyle = '#FFFFFF';
+                this.ctx.shadowBlur = 40;
+                this.ctx.fillText('HAPPY NEW YEAR', flare.x, flare.y - 40);
+
+                this.ctx.restore();
+            }
         });
     }
 
