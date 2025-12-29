@@ -41,7 +41,7 @@
             50% { background-position: 100% 50%; }
         }
 
-        /* Magical sparkles */
+        /* Magical sparkles with enhanced animation */
         #introPage::before {
             content: '';
             position: absolute;
@@ -58,13 +58,56 @@
                 radial-gradient(1px 1px at 33% 90%, white, transparent),
                 radial-gradient(2px 2px at 15% 80%, white, transparent);
             background-size: 200% 200%;
-            animation: sparkle 8s linear infinite;
+            animation: sparkle 8s linear infinite, sparkleMove 20s ease-in-out infinite;
             opacity: 0.4;
+        }
+
+        /* Radial light pulses from center */
+        #introPage::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 300%;
+            height: 300%;
+            transform: translate(-50%, -50%);
+            background: radial-gradient(circle at center,
+                rgba(255, 215, 0, 0.05) 0%,
+                rgba(255, 165, 0, 0.03) 25%,
+                transparent 50%);
+            animation: radialPulse 6s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes radialPulse {
+            0%, 100% {
+                transform: translate(-50%, -50%) scale(0.8);
+                opacity: 0.3;
+            }
+            50% {
+                transform: translate(-50%, -50%) scale(1.2);
+                opacity: 0.6;
+            }
         }
 
         @keyframes sparkle {
             0%, 100% { opacity: 0.3; }
             50% { opacity: 0.6; }
+        }
+
+        @keyframes sparkleMove {
+            0%, 100% {
+                background-position: 0% 0%;
+            }
+            25% {
+                background-position: 100% 100%;
+            }
+            50% {
+                background-position: 200% 0%;
+            }
+            75% {
+                background-position: 0% 200%;
+            }
         }
 
         #introPage.hidden {
@@ -75,16 +118,36 @@
         .intro-title {
             font-size: 5rem;
             font-weight: 900;
-            background: linear-gradient(45deg, #FFD700, #FFA500, #FFD700, #FFFFFF, #FFD700);
-            background-size: 300% 300%;
+            background: linear-gradient(45deg, #FFD700, #FFA500, #FFD700, #FFFFFF, #FFD700, #FFA500, #FFD700);
+            background-size: 400% 400%;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            animation: shimmer 4s ease infinite;
+            animation: shimmer 4s ease infinite, titleFloat 3s ease-in-out infinite, titleScale 2s ease-in-out infinite;
             margin-bottom: 20px;
             text-align: center;
-            text-shadow: 0 0 80px rgba(255, 215, 0, 0.5);
-            filter: drop-shadow(0 0 30px rgba(255, 215, 0, 0.6));
+            letter-spacing: 2px;
+            position: relative;
+            filter: drop-shadow(0 0 40px rgba(255, 215, 0, 0.8))
+                    drop-shadow(0 5px 15px rgba(255, 165, 0, 0.5));
+        }
+
+        .intro-title::before {
+            content: attr(data-text);
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #FFD700, #FFA500, #FFD700, #FFFFFF);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: blur(20px);
+            opacity: 0.7;
+            animation: shimmer 3s ease infinite reverse;
+            z-index: -1;
         }
 
         @keyframes shimmer {
@@ -92,86 +155,238 @@
             50% { background-position: 100% 50%; }
         }
 
+        @keyframes titleFloat {
+            0%, 100% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        @keyframes titleScale {
+            0%, 100% {
+                letter-spacing: 2px;
+            }
+            50% {
+                letter-spacing: 4px;
+            }
+        }
+
         .intro-subtitle {
             font-size: 1.8rem;
-            color: rgba(255, 255, 255, 0.85);
+            color: rgba(255, 255, 255, 0.95);
             margin-bottom: 80px;
             text-align: center;
-            text-shadow: 0 2px 20px rgba(255, 255, 255, 0.3);
+            text-shadow: 0 2px 30px rgba(255, 255, 255, 0.5),
+                         0 0 60px rgba(255, 215, 0, 0.3);
+            animation: subtitleGlow 3s ease-in-out infinite, fadeInSubtitle 1.5s ease;
+            font-weight: 300;
+            letter-spacing: 3px;
+            position: relative;
+        }
+
+        .intro-subtitle::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #FFD700, transparent);
+            animation: underlineGrow 2s ease forwards;
+            animation-delay: 0.8s;
+        }
+
+        @keyframes subtitleGlow {
+            0%, 100% {
+                text-shadow: 0 2px 30px rgba(255, 255, 255, 0.5),
+                             0 0 60px rgba(255, 215, 0, 0.3);
+            }
+            50% {
+                text-shadow: 0 2px 40px rgba(255, 255, 255, 0.7),
+                             0 0 80px rgba(255, 215, 0, 0.5);
+            }
+        }
+
+        @keyframes fadeInSubtitle {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes underlineGrow {
+            from {
+                width: 0%;
+            }
+            to {
+                width: 60%;
+            }
         }
 
         .try-it-section {
-            background: linear-gradient(135deg, rgba(255, 215, 0, 0.12), rgba(255, 165, 0, 0.08));
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 165, 0, 0.1), rgba(255, 100, 0, 0.08));
             border: 2px solid rgba(255, 215, 0, 0.4);
-            border-radius: 20px;
-            padding: 30px 50px;
+            border-radius: 25px;
+            padding: 40px 60px;
             margin-bottom: 40px;
-            backdrop-filter: blur(15px);
+            backdrop-filter: blur(20px);
             box-shadow: 0 8px 32px rgba(255, 215, 0, 0.2),
-                        inset 0 1px 0 rgba(255, 255, 255, 0.1);
-            animation: glow 3s ease-in-out infinite;
+                        0 0 60px rgba(255, 215, 0, 0.1),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+                        inset 0 -1px 0 rgba(255, 215, 0, 0.2);
+            animation: glow 3s ease-in-out infinite, sectionScale 4s ease-in-out infinite, fadeInSection 2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .try-it-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 215, 0, 0.1), transparent);
+            animation: shimmerBox 6s linear infinite;
+        }
+
+        @keyframes shimmerBox {
+            0% {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+            100% {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
         }
 
         @keyframes glow {
             0%, 100% {
                 box-shadow: 0 8px 32px rgba(255, 215, 0, 0.2),
-                            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+                            0 0 60px rgba(255, 215, 0, 0.1),
+                            inset 0 1px 0 rgba(255, 255, 255, 0.1),
+                            inset 0 -1px 0 rgba(255, 215, 0, 0.2);
+                border-color: rgba(255, 215, 0, 0.4);
             }
             50% {
-                box-shadow: 0 8px 40px rgba(255, 215, 0, 0.4),
-                            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+                box-shadow: 0 8px 45px rgba(255, 215, 0, 0.4),
+                            0 0 90px rgba(255, 215, 0, 0.2),
+                            inset 0 1px 0 rgba(255, 255, 255, 0.2),
+                            inset 0 -1px 0 rgba(255, 215, 0, 0.3);
+                border-color: rgba(255, 215, 0, 0.6);
+            }
+        }
+
+        @keyframes sectionScale {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.02);
+            }
+        }
+
+        @keyframes fadeInSection {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
             }
         }
 
         .try-it-text {
-            font-size: 1.6rem;
+            font-size: 1.7rem;
             color: rgba(255, 255, 255, 0.98);
             margin-bottom: 15px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            text-shadow: 0 2px 10px rgba(255, 215, 0, 0.3),
-                         0 0 30px rgba(255, 215, 0, 0.2);
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            text-shadow: 0 2px 15px rgba(255, 215, 0, 0.5),
+                         0 0 40px rgba(255, 215, 0, 0.3),
+                         0 4px 8px rgba(0, 0, 0, 0.3);
+            animation: textPulse 3s ease-in-out infinite;
+            position: relative;
+            z-index: 1;
+        }
+
+        @keyframes textPulse {
+            0%, 100% {
+                text-shadow: 0 2px 15px rgba(255, 215, 0, 0.5),
+                             0 0 40px rgba(255, 215, 0, 0.3),
+                             0 4px 8px rgba(0, 0, 0, 0.3);
+            }
+            50% {
+                text-shadow: 0 2px 25px rgba(255, 215, 0, 0.7),
+                             0 0 60px rgba(255, 215, 0, 0.5),
+                             0 4px 12px rgba(0, 0, 0, 0.4);
+            }
         }
 
         .click-hint {
-            font-size: 1.15rem;
+            font-size: 1.2rem;
             color: rgba(255, 215, 0, 0.95);
             margin-top: 5px;
             animation: pulse 2s ease infinite;
-            font-weight: 500;
-            letter-spacing: 0.3px;
-            text-shadow: 0 2px 15px rgba(255, 215, 0, 0.5);
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 20px rgba(255, 215, 0, 0.6),
+                         0 0 30px rgba(255, 165, 0, 0.4);
+            position: relative;
+            z-index: 1;
         }
 
         @keyframes pulse {
             0%, 100% {
                 opacity: 0.7;
                 transform: scale(1);
+                text-shadow: 0 2px 20px rgba(255, 215, 0, 0.6),
+                             0 0 30px rgba(255, 165, 0, 0.4);
             }
             50% {
                 opacity: 1;
-                transform: scale(1.05);
+                transform: scale(1.08);
+                text-shadow: 0 2px 30px rgba(255, 215, 0, 0.9),
+                             0 0 50px rgba(255, 165, 0, 0.6);
             }
         }
 
         .rocket-icon {
-            font-size: 3.5rem;
-            margin-bottom: 15px;
-            animation: float 3s ease-in-out infinite;
-            filter: drop-shadow(0 4px 12px rgba(255, 215, 0, 0.4))
-                    drop-shadow(0 0 20px rgba(255, 165, 0, 0.3));
+            font-size: 4.5rem;
+            margin-bottom: 20px;
+            animation: float 3s ease-in-out infinite, rocketSpin 8s linear infinite;
+            filter: drop-shadow(0 4px 15px rgba(255, 215, 0, 0.6))
+                    drop-shadow(0 0 30px rgba(255, 165, 0, 0.5));
+            position: relative;
+            z-index: 1;
         }
 
         @keyframes float {
             0%, 100% {
-                transform: translateY(0px) rotate(-3deg);
-                filter: drop-shadow(0 4px 12px rgba(255, 215, 0, 0.4))
-                        drop-shadow(0 0 20px rgba(255, 165, 0, 0.3));
+                transform: translateY(0px) rotate(-5deg);
+                filter: drop-shadow(0 4px 15px rgba(255, 215, 0, 0.6))
+                        drop-shadow(0 0 30px rgba(255, 165, 0, 0.5));
             }
             50% {
-                transform: translateY(-15px) rotate(3deg);
-                filter: drop-shadow(0 8px 20px rgba(255, 215, 0, 0.6))
-                        drop-shadow(0 0 30px rgba(255, 165, 0, 0.5));
+                transform: translateY(-20px) rotate(5deg);
+                filter: drop-shadow(0 10px 30px rgba(255, 215, 0, 0.8))
+                        drop-shadow(0 0 50px rgba(255, 165, 0, 0.7));
+            }
+        }
+
+        @keyframes rocketSpin {
+            0%, 90%, 100% {
+                transform: rotate(0deg);
+            }
+            95% {
+                transform: rotate(360deg);
             }
         }
 
@@ -203,60 +418,116 @@
             bottom: 40px;
             left: 50%;
             transform: translateX(-50%);
-            background: linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FFD700 100%);
-            background-size: 200% 200%;
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 25%, #FFD700 50%, #FFA500 75%, #FFD700 100%);
+            background-size: 300% 300%;
+            border: 3px solid rgba(255, 255, 255, 0.4);
             color: #000;
-            padding: 22px 55px;
+            padding: 24px 60px;
             border-radius: 50px;
-            font-size: 1.4rem;
-            font-weight: 800;
-            letter-spacing: 1px;
+            font-size: 1.5rem;
+            font-weight: 900;
+            letter-spacing: 2px;
             cursor: pointer;
             z-index: 10001;
             opacity: 0;
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 12px 45px rgba(255, 215, 0, 0.5),
-                        inset 0 1px 0 rgba(255, 255, 255, 0.4),
-                        inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+            box-shadow: 0 12px 50px rgba(255, 215, 0, 0.6),
+                        0 0 80px rgba(255, 215, 0, 0.3),
+                        inset 0 2px 0 rgba(255, 255, 255, 0.5),
+                        inset 0 -2px 0 rgba(0, 0, 0, 0.2);
             animation: buttonGlow 3s ease infinite;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .continue-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.4);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s ease, height 0.6s ease;
+        }
+
+        .continue-btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .continue-btn::after {
+            content: '→';
+            position: absolute;
+            right: 25px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.8rem;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .continue-btn:hover::after {
+            opacity: 1;
+            right: 20px;
         }
 
         @keyframes buttonGlow {
             0%, 100% {
                 background-position: 0% 50%;
+                box-shadow: 0 12px 50px rgba(255, 215, 0, 0.6),
+                            0 0 80px rgba(255, 215, 0, 0.3),
+                            inset 0 2px 0 rgba(255, 255, 255, 0.5),
+                            inset 0 -2px 0 rgba(0, 0, 0, 0.2);
             }
             50% {
                 background-position: 100% 50%;
+                box-shadow: 0 12px 60px rgba(255, 215, 0, 0.8),
+                            0 0 100px rgba(255, 215, 0, 0.5),
+                            inset 0 2px 0 rgba(255, 255, 255, 0.6),
+                            inset 0 -2px 0 rgba(0, 0, 0, 0.3);
             }
         }
 
         .continue-btn.visible {
             opacity: 1;
-            animation: slideUp 0.6s ease, buttonGlow 3s ease infinite;
+            animation: slideUp 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), buttonGlow 3s ease infinite, buttonBounce 2s ease infinite;
         }
 
         @keyframes slideUp {
             from {
                 opacity: 0;
-                transform: translateX(-50%) translateY(20px);
+                transform: translateX(-50%) translateY(50px) scale(0.8);
             }
             to {
                 opacity: 1;
-                transform: translateX(-50%) translateY(0);
+                transform: translateX(-50%) translateY(0) scale(1);
+            }
+        }
+
+        @keyframes buttonBounce {
+            0%, 100% {
+                transform: translateX(-50%) translateY(0px);
+            }
+            50% {
+                transform: translateX(-50%) translateY(-5px);
             }
         }
 
         .continue-btn:hover {
-            transform: translateX(-50%) scale(1.08) translateY(-2px);
-            box-shadow: 0 18px 60px rgba(255, 215, 0, 0.7),
-                        inset 0 1px 0 rgba(255, 255, 255, 0.5),
-                        inset 0 -1px 0 rgba(0, 0, 0, 0.2);
-            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateX(-50%) scale(1.1) translateY(-5px);
+            box-shadow: 0 20px 70px rgba(255, 215, 0, 0.9),
+                        0 0 120px rgba(255, 215, 0, 0.6),
+                        inset 0 2px 0 rgba(255, 255, 255, 0.6),
+                        inset 0 -2px 0 rgba(0, 0, 0, 0.3);
+            border-color: rgba(255, 255, 255, 0.7);
+            letter-spacing: 3px;
         }
 
         .continue-btn:active {
-            transform: translateX(-50%) scale(1.02);
+            transform: translateX(-50%) scale(1.05) translateY(-2px);
         }
 
         /* Selection Page */
@@ -282,18 +553,37 @@
         }
 
         .selection-title {
-            font-size: 3rem;
-            font-weight: 700;
-            color: #fff;
+            font-size: 3.5rem;
+            font-weight: 900;
+            background: linear-gradient(45deg, #fff, #FFD700, #fff, #FFA500, #fff);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             margin-bottom: 20px;
             text-align: center;
+            letter-spacing: 2px;
+            animation: shimmer 5s ease infinite, selectionTitlePulse 3s ease-in-out infinite;
+            filter: drop-shadow(0 0 30px rgba(255, 215, 0, 0.4));
+        }
+
+        @keyframes selectionTitlePulse {
+            0%, 100% {
+                filter: drop-shadow(0 0 30px rgba(255, 215, 0, 0.4));
+            }
+            50% {
+                filter: drop-shadow(0 0 50px rgba(255, 215, 0, 0.7));
+            }
         }
 
         .selection-subtitle {
-            font-size: 1.3rem;
-            color: rgba(255, 255, 255, 0.6);
+            font-size: 1.5rem;
+            color: rgba(255, 255, 255, 0.8);
             margin-bottom: 60px;
             text-align: center;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 20px rgba(255, 255, 255, 0.3);
+            animation: fadeInSubtitle 1.5s ease;
         }
 
         .selection-cards {
@@ -305,16 +595,39 @@
         }
 
         .selection-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 3px solid rgba(255, 255, 255, 0.1);
-            border-radius: 30px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+            border: 3px solid rgba(255, 255, 255, 0.15);
+            border-radius: 35px;
             padding: 60px 40px;
             width: 380px;
             cursor: pointer;
-            transition: all 0.4s ease;
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
             position: relative;
             overflow: hidden;
             text-align: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            opacity: 0;
+            animation: cardSlideIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        .selection-card:nth-child(1) {
+            animation-delay: 0.2s;
+        }
+
+        .selection-card:nth-child(2) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes cardSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(50px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
         }
 
         .selection-card::before {
@@ -325,45 +638,97 @@
             width: 0;
             height: 0;
             border-radius: 50%;
-            background: radial-gradient(circle, rgba(255, 255, 255, 0.1), transparent);
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.15), rgba(255, 215, 0, 0.05), transparent);
             transform: translate(-50%, -50%);
-            transition: width 0.6s ease, height 0.6s ease;
+            transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), height 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .selection-card::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.03), transparent);
+            transform: rotate(0deg);
+            transition: transform 0.6s ease;
+        }
+
+        .selection-card:hover::after {
+            transform: rotate(180deg);
         }
 
         .selection-card:hover::before {
-            width: 600px;
-            height: 600px;
+            width: 700px;
+            height: 700px;
         }
 
         .selection-card:hover {
-            transform: translateY(-15px) scale(1.02);
-            border-color: rgba(255, 255, 255, 0.3);
-            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5);
+            transform: translateY(-20px) scale(1.05);
+            border-color: rgba(255, 215, 0, 0.5);
+            box-shadow: 0 35px 100px rgba(255, 215, 0, 0.3),
+                        0 0 60px rgba(255, 215, 0, 0.2),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.08), rgba(255, 165, 0, 0.05));
         }
 
         .card-icon {
-            font-size: 8rem;
+            font-size: 9rem;
             margin-bottom: 30px;
-            filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.3));
-            transition: transform 0.3s ease;
+            filter: drop-shadow(0 0 25px rgba(255, 255, 255, 0.4));
+            transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            z-index: 1;
+            animation: iconFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes iconFloat {
+            0%, 100% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
         }
 
         .selection-card:hover .card-icon {
-            transform: scale(1.1) rotate(5deg);
+            transform: scale(1.2) rotate(360deg) translateY(-10px);
+            filter: drop-shadow(0 0 40px rgba(255, 215, 0, 0.8))
+                    drop-shadow(0 0 60px rgba(255, 165, 0, 0.5));
         }
 
         .card-title {
-            font-size: 2.5rem;
-            font-weight: 800;
+            font-size: 2.8rem;
+            font-weight: 900;
             color: #fff;
             margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 20px rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .selection-card:hover .card-title {
+            color: #FFD700;
+            text-shadow: 0 2px 30px rgba(255, 215, 0, 0.6),
+                         0 0 40px rgba(255, 215, 0, 0.4);
+            letter-spacing: 2px;
         }
 
         .card-description {
-            font-size: 1.1rem;
-            color: rgba(255, 255, 255, 0.7);
-            line-height: 1.6;
+            font-size: 1.15rem;
+            color: rgba(255, 255, 255, 0.75);
+            line-height: 1.8;
             margin-bottom: 25px;
+            position: relative;
+            z-index: 1;
+            transition: all 0.3s ease;
+        }
+
+        .selection-card:hover .card-description {
+            color: rgba(255, 255, 255, 0.9);
         }
 
         .card-badge {
@@ -411,12 +776,12 @@
     <!-- Intro Page -->
     <div id="introPage">
         <div class="intro-content-wrapper">
-            <h1 class="intro-title">Solana New Year 2026</h1>
+            <h1 class="intro-title" data-text="Solana New Year 2026">Solana New Year 2026</h1>
             <p class="intro-subtitle">Celebrate the new year with the world</p>
             <div class="try-it-section">
                 <div class="rocket-icon">🚀</div>
                 <p class="try-it-text">Fire Your First Rocket!</p>
-                <p class="click-hint">Click anywhere to launch</p>
+                <p class="click-hint">✨ Click anywhere to launch ✨</p>
             </div>
         </div>
         <canvas id="previewCanvas"></canvas>
@@ -610,6 +975,17 @@
                     rocket.trail.unshift({ x: rocket.x, y: rocket.y });
                     if (rocket.trail.length > 20) rocket.trail.pop();
 
+                    // Draw rocket body
+                    ctx.save();
+                    ctx.globalAlpha = 1;
+                    ctx.shadowBlur = 15;
+                    ctx.shadowColor = 'rgba(255, 215, 0, 0.8)';
+                    ctx.fillStyle = 'rgb(255, 215, 0)';
+                    ctx.beginPath();
+                    ctx.arc(rocket.x, rocket.y, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+
                     // Draw trail with glow
                     rocket.trail.forEach((point, index) => {
                         const alpha = 1 - (index / rocket.trail.length);
@@ -629,7 +1005,8 @@
                         ctx.restore();
                     });
 
-                    if (rocket.y <= rocket.targetY) {
+                    // Check if rocket reached target or velocity changed direction (going down)
+                    if (rocket.y <= rocket.targetY || rocket.vy >= 0) {
                         rocket.exploded = true;
                         explode(rocket.x, rocket.y);
                         rockets.splice(i, 1);
