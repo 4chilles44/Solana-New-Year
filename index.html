@@ -124,17 +124,23 @@
         }
 
         .try-it-text {
-            font-size: 1.5rem;
-            color: rgba(255, 255, 255, 0.95);
+            font-size: 1.6rem;
+            color: rgba(255, 255, 255, 0.98);
             margin-bottom: 15px;
-            font-weight: 600;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-shadow: 0 2px 10px rgba(255, 215, 0, 0.3),
+                         0 0 30px rgba(255, 215, 0, 0.2);
         }
 
         .click-hint {
-            font-size: 1.1rem;
-            color: rgba(255, 215, 0, 0.9);
+            font-size: 1.15rem;
+            color: rgba(255, 215, 0, 0.95);
             margin-top: 5px;
             animation: pulse 2s ease infinite;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+            text-shadow: 0 2px 15px rgba(255, 215, 0, 0.5);
         }
 
         @keyframes pulse {
@@ -149,14 +155,24 @@
         }
 
         .rocket-icon {
-            font-size: 3rem;
+            font-size: 3.5rem;
             margin-bottom: 15px;
             animation: float 3s ease-in-out infinite;
+            filter: drop-shadow(0 4px 12px rgba(255, 215, 0, 0.4))
+                    drop-shadow(0 0 20px rgba(255, 165, 0, 0.3));
         }
 
         @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
+            0%, 100% {
+                transform: translateY(0px) rotate(-3deg);
+                filter: drop-shadow(0 4px 12px rgba(255, 215, 0, 0.4))
+                        drop-shadow(0 0 20px rgba(255, 165, 0, 0.3));
+            }
+            50% {
+                transform: translateY(-15px) rotate(3deg);
+                filter: drop-shadow(0 8px 20px rgba(255, 215, 0, 0.6))
+                        drop-shadow(0 0 30px rgba(255, 165, 0, 0.5));
+            }
         }
 
         /* Preview Canvas */
@@ -187,27 +203,60 @@
             bottom: 40px;
             left: 50%;
             transform: translateX(-50%);
-            background: linear-gradient(45deg, #FFD700, #FFA500);
-            border: none;
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 50%, #FFD700 100%);
+            background-size: 200% 200%;
+            border: 2px solid rgba(255, 255, 255, 0.3);
             color: #000;
-            padding: 20px 50px;
+            padding: 22px 55px;
             border-radius: 50px;
-            font-size: 1.3rem;
-            font-weight: 700;
+            font-size: 1.4rem;
+            font-weight: 800;
+            letter-spacing: 1px;
             cursor: pointer;
             z-index: 10001;
             opacity: 0;
-            transition: all 0.3s ease;
-            box-shadow: 0 10px 40px rgba(255, 215, 0, 0.4);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 12px 45px rgba(255, 215, 0, 0.5),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.4),
+                        inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+            animation: buttonGlow 3s ease infinite;
+        }
+
+        @keyframes buttonGlow {
+            0%, 100% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
         }
 
         .continue-btn.visible {
             opacity: 1;
+            animation: slideUp 0.6s ease, buttonGlow 3s ease infinite;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
         }
 
         .continue-btn:hover {
-            transform: translateX(-50%) scale(1.05);
-            box-shadow: 0 15px 50px rgba(255, 215, 0, 0.6);
+            transform: translateX(-50%) scale(1.08) translateY(-2px);
+            box-shadow: 0 18px 60px rgba(255, 215, 0, 0.7),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.5),
+                        inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .continue-btn:active {
+            transform: translateX(-50%) scale(1.02);
         }
 
         /* Selection Page */
@@ -440,14 +489,32 @@
         const ctx = canvas.getContext('2d');
         let rockets = [];
         let particles = [];
+        let stars = [];
         let hasLaunched = false;
 
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
+        // Generate stars
+        function generateStars() {
+            stars = [];
+            for (let i = 0; i < 100; i++) {
+                stars.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height * 0.6,
+                    size: Math.random() * 2 + 0.5,
+                    opacity: Math.random() * 0.5 + 0.3,
+                    twinkleSpeed: (Math.random() * 0.01 + 0.005) * (Math.random() > 0.5 ? 1 : -1)
+                });
+            }
+        }
+
+        generateStars();
+
         window.addEventListener('resize', () => {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
+            generateStars();
         });
 
         // Launch rocket on click
@@ -462,12 +529,14 @@
         });
 
         function launchRocket(x, y) {
+            // Make rockets go to upper third of screen for more dramatic effect
+            const targetY = Math.min(y, canvas.height * 0.35);
             rockets.push({
                 x: x,
                 y: canvas.height,
-                targetY: y,
+                targetY: targetY,
                 vx: 0,
-                vy: -300,
+                vy: -400, // Faster initial velocity
                 exploded: false,
                 trail: []
             });
@@ -511,6 +580,25 @@
             } else {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
             }
+
+            // Draw twinkling stars
+            stars.forEach(star => {
+                ctx.save();
+                ctx.globalAlpha = star.opacity;
+                ctx.fillStyle = '#ffffff';
+                ctx.shadowBlur = star.size * 3;
+                ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+
+                // Twinkle
+                star.opacity += star.twinkleSpeed;
+                if (star.opacity > 0.8 || star.opacity < 0.3) {
+                    star.twinkleSpeed *= -1;
+                }
+            });
 
             // Update rockets
             for (let i = rockets.length - 1; i >= 0; i--) {
