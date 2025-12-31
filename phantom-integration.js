@@ -1,9 +1,7 @@
 // Phantom Wallet Integration for Fireworks
-// Dual-gated: Check both SOL and token balance
+// Tier-gated: Unlimited rockets for token holders with tier-based cooldowns
 
-const SOL_PER_ROCKET = 0.1; // 0.1 SOL = 1 rocket
 const TOKEN_MINT = '3bgzvzaQ841puqUba7JaZqUbA7inHEMMSe3neBeapump'; // HP Token
-const TOKENS_PER_ROCKET = 1000; // 1000 HP tokens = 1 rocket
 
 // RPC endpoint - QuickNode dedicated endpoint for reliable balance reads
 const RPC_ENDPOINT = 'https://broken-billowing-snow.solana-mainnet.quiknode.pro/6792cf53f193c7d68dd52d33cb634b45cb83ca0d/';
@@ -114,16 +112,14 @@ class PhantomWalletIntegration {
             this.tokenBalance = solBalance;
             this.hpTokenBalance = tokenBalance;
 
-            // Calculate available rockets based on BOTH SOL and tokens
-            const rocketsFromSol = Math.floor(solBalance / SOL_PER_ROCKET);
-            const rocketsFromTokens = Math.floor(tokenBalance / TOKENS_PER_ROCKET);
-
-            // Use the sum of both
-            this.availableRockets = rocketsFromSol + rocketsFromTokens;
-
-            console.log(`Rockets from SOL: ${rocketsFromSol}`);
-            console.log(`Rockets from HP Tokens: ${rocketsFromTokens}`);
-            console.log(`Total Available Rockets: ${this.availableRockets}`);
+            // If user has ANY HP tokens, they get unlimited rockets with tier-based cooldowns
+            if (tokenBalance > 0) {
+                this.availableRockets = Infinity;
+                console.log(`HP Token holder detected (${tokenBalance} tokens) - Unlimited rockets with tier-based cooldowns`);
+            } else {
+                this.availableRockets = 0;
+                console.log('No HP tokens detected - Limited demo mode only');
+            }
 
             return {
                 tokenBalance: this.tokenBalance,
@@ -265,7 +261,12 @@ function updateWalletUI(status) {
         connectBtn.classList.add('connected');
         walletInfo.classList.remove('hidden');
 
-        rocketsDisplay.textContent = status.remainingRockets;
+        // Show "Unlimited" if user has HP tokens, otherwise show remaining rockets
+        if (status.hpTokenBalance > 0) {
+            rocketsDisplay.textContent = 'Unlimited';
+        } else {
+            rocketsDisplay.textContent = status.remainingRockets;
+        }
     } else {
         connectBtn.textContent = 'Connect Phantom';
         connectBtn.classList.remove('connected');
@@ -302,7 +303,10 @@ async function toggleWalletConnection() {
             phantomWallet.startBalancePolling();
 
             // Show success message
-            showNotification(`Connected! You have ${result.availableRockets} rockets available.`, 'success');
+            const rocketMsg = result.availableRockets === Infinity ?
+                'Connected! Unlimited rockets available.' :
+                `Connected! You have ${result.availableRockets} rockets available.`;
+            showNotification(rocketMsg, 'success');
         }
     } catch (err) {
         console.error('Wallet error:', err);

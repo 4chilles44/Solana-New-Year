@@ -183,51 +183,36 @@ class FireworksDisplay {
                 return;
             }
 
-            // If tier test mode is enabled, bypass wallet checks
-            const tierTestCheckbox = document.getElementById('testTierCheckbox');
-            const isTierTesting = tierTestCheckbox && tierTestCheckbox.checked;
-
-            if (isTierTesting) {
-                // Unlimited rockets in test mode (universal 4s cooldown handled above)
-                this.userPoints = Math.floor(Math.random() * 80) + 1;
-                this.launchRocket(x, y); // Pass Y coordinate for aiming
-
-                // Start regular shot cooldown
-                regularShotReady = false;
-                regularShotCooldownEndTime = Date.now() + REGULAR_SHOT_COOLDOWN;
-                setTimeout(() => {
-                    regularShotReady = true;
-                }, REGULAR_SHOT_COOLDOWN);
-
-                return;
-            }
-
-            // Check if wallet is connected (phantomWallet is defined in phantom-integration.js)
+            // Check if wallet is connected and has HP tokens
             if (typeof phantomWallet !== 'undefined') {
                 const walletStatus = phantomWallet.getStatus();
 
-                if (walletStatus.connected) {
-                    // Check if user has rockets available
-                    const result = phantomWallet.useRocket();
-                    if (!result.success) {
-                        showNotification('No rockets remaining! Get more tokens.', 'error');
-                        return;
-                    }
-
-                    // Update UI with remaining rockets
-                    updateWalletUI(phantomWallet.getStatus());
+                if (walletStatus.connected && walletStatus.hpTokenBalance > 0) {
+                    // User has HP tokens - unlimited rockets with tier-based cooldowns
+                    // Tier-based cooldown is handled above in the regularShotReady check
 
                     // Set random points for this launch
                     this.userPoints = Math.floor(Math.random() * 80) + 1;
-                } else {
-                    // Not connected - allow 1 free demo rocket
+
+                    // Update UI with infinite rockets
+                    updateWalletUI(walletStatus);
+                } else if (walletStatus.connected && walletStatus.hpTokenBalance === 0) {
+                    // Connected but no HP tokens - only demo rocket
                     if (!this.freeRocketUsed) {
-                        // First rocket is free - special Solana demo rocket
                         this.freeRocketUsed = true;
                         this.launchSolanaDemo(x);
                         return;
                     } else {
-                        // Show token requirement message
+                        showNotification('Get HP tokens for unlimited rockets!', 'info');
+                        return;
+                    }
+                } else {
+                    // Not connected - allow 1 free demo rocket
+                    if (!this.freeRocketUsed) {
+                        this.freeRocketUsed = true;
+                        this.launchSolanaDemo(x);
+                        return;
+                    } else {
                         showTokenRequirementMessage();
                         return;
                     }
