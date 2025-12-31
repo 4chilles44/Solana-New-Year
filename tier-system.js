@@ -12,8 +12,7 @@ class TierSystem {
         this.userTier = null;
         this.totalConnected = 0;
 
-        // Entry requirement
-        this.MIN_TOKENS = 1000000; // 1M tokens to participate
+
 
         // Test mode for cycling through positions
         this.testMode = false;
@@ -67,16 +66,6 @@ class TierSystem {
     // Calculate tier based on rank position
     // Uses logarithmic scaling to make top positions more distinct
     calculateTier(rank, total, balance) {
-        // Check minimum token requirement
-        if (balance < this.MIN_TOKENS) {
-            return {
-                name: 'Locked',
-                rank: null,
-                percentile: 0,
-                scale: 0,
-                description: 'Need 1M tokens to participate'
-            };
-        }
 
         // Calculate percentile (0-100, where 0 is #1)
         const percentile = ((rank - 1) / Math.max(total - 1, 1)) * 100;
@@ -271,7 +260,7 @@ class TierSystem {
     // Get current user's tier info
     getUserTier() {
         if (this.testMode) {
-            return this.calculateTier(this.testRank, this.testTotalUsers, this.MIN_TOKENS * 10);
+            return this.calculateTier(this.testRank, this.testTotalUsers, 100000); // Use a default balance for test mode
         }
 
         if (!this.userAddress) {
