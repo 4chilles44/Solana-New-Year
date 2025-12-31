@@ -24,54 +24,9 @@
         </div>
     </div>
 
-    <!-- Test Mode Selector (for testing) -->
-    <div id="testModeSelector" class="test-mode-selector">
-        <label>
-            <input type="checkbox" id="testTierCheckbox" onchange="toggleTierTest(this.checked)">
-            Test Tier System
-        </label>
-        <div class="tier-test-controls" id="tierTestControls" style="display: none;">
-            <button class="tier-test-btn" onclick="cycleTierDown()">◀ Rank Down</button>
-            <button class="tier-test-btn" onclick="cycleTierUp()">Rank Up ▶</button>
-            <button class="tier-test-btn" onclick="toggleTierEditor()">⚙️ Edit Tiers</button>
-        </div>
-    </div>
 
-    <!-- Tier Config Editor Panel -->
-    <div id="tierEditorPanel" class="tier-editor-panel hidden">
-        <div class="tier-editor-header">
-            <h3>Tier Configuration Editor</h3>
-            <button class="tier-editor-close" onclick="toggleTierEditor()">✕</button>
-        </div>
-        <div class="tier-editor-info">
-            <p>Edit values for rank <span id="editorCurrentRank">1</span>/100</p>
-            <p style="font-size: 11px; opacity: 0.7;">Changes save to tier-config.json</p>
-        </div>
-        <div class="tier-editor-controls">
-            <div class="tier-editor-field">
-                <label>Max Height (0.0=top, 1.0=bottom):</label>
-                <input type="number" id="editorMaxHeight" step="0.01" min="0" max="1" value="0.05">
-                <span class="field-value" id="editorMaxHeightValue">0.05</span>
-            </div>
-            <div class="tier-editor-field">
-                <label>Max Font Size (multiplier):</label>
-                <input type="number" id="editorMaxFontSize" step="0.01" min="0.001" max="10" value="5.0">
-                <span class="field-value" id="editorMaxFontSizeValue">5.0</span>
-            </div>
-            <div class="tier-editor-field">
-                <label>Max Rocket Size (multiplier):</label>
-                <input type="number" id="editorMaxRocketSize" step="0.01" min="0.001" max="10" value="8.0">
-                <span class="field-value" id="editorMaxRocketSizeValue">8.0</span>
-            </div>
-        </div>
-        <div class="tier-editor-actions">
-            <button class="tier-editor-btn" onclick="applyTierEdits()">Apply to Current Rank</button>
-            <button class="tier-editor-btn" onclick="downloadTierConfig()">Download Config</button>
-            <div style="margin-top: 10px; font-size: 11px; opacity: 0.7;">
-                Note: Browser can't write files directly. Use "Download Config" to save, then replace tier-config.json manually.
-            </div>
-        </div>
-    </div>
+
+
 
     <!-- Tier Display Panel (Simplified) -->
     <div id="tierPanel" class="tier-panel hidden">
@@ -254,7 +209,7 @@
                 </div>
             </div>
 
-            <button class="connect-wallet-btn" onclick="connectPhantomWallet()">
+            <button class="connect-wallet-btn" onclick="toggleWalletConnection()">
                 <span class="btn-icon">👻</span>
                 Connect Phantom Wallet
             </button>

@@ -6,14 +6,8 @@ class WorldNewYearTimer {
         this.canvas = document.getElementById('canvas');
         this.ctx = this.canvas.getContext('2d');
 
-        // Time mode: 'test' (accelerated) or 'live' (real-time)
+        // Always use live mode - no test functionality
         this.timeMode = 'live';
-        this.baseAcceleration = 1000; // Fast forward speed: 1 second = 1000 seconds (16.6 minutes)
-        this.currentAcceleration = 1000; // Current speed (changes dynamically)
-
-        // Time tracking
-        this.testModeStartTime = Date.now();
-        this.testModeOffset = 0;
 
         // Target year for New Year celebrations
         this.targetYear = 2026;
@@ -121,15 +115,6 @@ class WorldNewYearTimer {
     }
 
     setupEventListeners() {
-        // Time mode toggle
-        document.getElementById('testModeBtn').addEventListener('click', () => {
-            this.setTimeMode('test');
-        });
-
-        document.getElementById('liveModeBtn').addEventListener('click', () => {
-            this.setTimeMode('live');
-        });
-
         // Spacebar to launch lanterns
         document.addEventListener('keydown', (e) => {
             if (e.code === 'Space') {
@@ -145,82 +130,11 @@ class WorldNewYearTimer {
         });
     }
 
-    setTimeMode(mode) {
-        this.timeMode = mode;
-
-        if (mode === 'test') {
-            this.testModeStartTime = Date.now();
-            // Start from a time just before New Year in the earliest timezone
-            const newYearUTC = Date.UTC(this.targetYear, 0, 1, 0, 0, 0);
-            // Earliest timezone is UTC+14 (Kiribati)
-            const earliestNewYear = newYearUTC - (14 * 60 * 60 * 1000);
-            // Start 1 hour before earliest midnight in test mode
-            this.testModeOffset = earliestNewYear - (60 * 60 * 1000);
-        }
-
-        // Update UI
-        document.getElementById('testModeBtn').classList.toggle('active', mode === 'test');
-        document.getElementById('liveModeBtn').classList.toggle('active', mode === 'live');
-
-        // Reset celebrations
-        this.activeCelebrations.clear();
-        this.completedCelebrations.clear();
-    }
-
     getCurrentTime() {
-        if (this.timeMode === 'test') {
-            const elapsed = Date.now() - this.testModeStartTime;
-            const acceleratedElapsed = elapsed * this.currentAcceleration;
-            return new Date(this.testModeOffset + acceleratedElapsed);
-        } else {
-            return new Date();
-        }
+        return new Date();
     }
 
-    updateTestModeSpeed() {
-        if (this.timeMode !== 'test') return;
 
-        const now = this.getCurrentTime();
-        const nextCelebration = this.findNextCelebration(now);
-
-        if (nextCelebration) {
-            const timeUntil = nextCelebration.newYearTime - now.getTime();
-
-            // Slow down to normal speed when within 10 seconds of a celebration
-            if (timeUntil <= 10000 && timeUntil > 0) {
-                // Normal speed
-                if (this.currentAcceleration !== 1) {
-                    // Adjust offset to maintain time continuity when switching speeds
-                    const currentTime = this.getCurrentTime();
-                    this.testModeOffset = currentTime.getTime();
-                    this.testModeStartTime = Date.now();
-                    this.currentAcceleration = 1;
-                }
-            } else {
-                // Fast forward speed
-                if (this.currentAcceleration !== this.baseAcceleration) {
-                    // Check if we're in a celebration (should stay at normal speed)
-                    const inCelebration = this.activeCelebrations.size > 0;
-
-                    if (!inCelebration) {
-                        // Adjust offset to maintain time continuity when switching speeds
-                        const currentTime = this.getCurrentTime();
-                        this.testModeOffset = currentTime.getTime();
-                        this.testModeStartTime = Date.now();
-                        this.currentAcceleration = this.baseAcceleration;
-                    }
-                }
-            }
-        }
-
-        // Keep normal speed during active celebrations (full 2 minutes)
-        if (this.activeCelebrations.size > 0 && this.currentAcceleration !== 1) {
-            const currentTime = this.getCurrentTime();
-            this.testModeOffset = currentTime.getTime();
-            this.testModeStartTime = Date.now();
-            this.currentAcceleration = 1;
-        }
-    }
 
     populateTimeline() {
         const track = document.getElementById('timelineTrack');
@@ -284,9 +198,8 @@ class WorldNewYearTimer {
         const newYearUTC = Date.UTC(this.targetYear, 0, 1, 0, 0, 0);
         const newYearTime = newYearUTC - offsetMs;
 
-        // In test mode: 2 minutes per celebration (to match live mode structure)
-        // In live mode: 2 minutes per celebration (60s country themed + 30s gold + 30s country themed)
-        const celebrationDuration = this.timeMode === 'test' ? 120000 : 120000;
+        // 2 minutes per celebration (60s country themed + 30s gold + 30s country themed)
+        const celebrationDuration = 120000;
         const celebrationEnd = newYearTime + celebrationDuration;
 
         const nowTime = now.getTime();
@@ -781,20 +694,6 @@ class WorldNewYearTimer {
         const timeStr = now.toISOString().substring(11, 19);
         document.getElementById('currentTimeValue').textContent = timeStr;
 
-        // Update speed indicator (test mode only)
-        const speedIndicator = document.getElementById('speedIndicator');
-        if (this.timeMode === 'test') {
-            if (this.currentAcceleration === 1) {
-                speedIndicator.textContent = '▶ Normal Speed';
-                speedIndicator.className = 'speed-indicator normal';
-            } else {
-                speedIndicator.textContent = '⏩ Fast Forward (1000x)';
-                speedIndicator.className = 'speed-indicator fast';
-            }
-        } else {
-            speedIndicator.textContent = '';
-        }
-
         // Update celebrating countries
         const celebratingDiv = document.getElementById('celebratingCountries');
         if (this.activeCelebrations.size > 0) {
@@ -879,8 +778,8 @@ class WorldNewYearTimer {
         if (nextCelebration) {
             const timeUntil = nextCelebration.newYearTime - now.getTime();
 
-            // Show countdown when within 10 seconds (in live mode) or 5 seconds (in test mode)
-            const countdownThreshold = this.timeMode === 'test' ? 5000 : 10000;
+            // Show countdown when within 10 seconds
+            const countdownThreshold = 10000;
 
             if (timeUntil <= countdownThreshold && timeUntil > 0) {
                 const secondsLeft = Math.ceil(timeUntil / 1000);
@@ -1148,9 +1047,6 @@ class WorldNewYearTimer {
         const now = Date.now();
         const deltaTime = (now - this.lastTime) / 16.67; // Normalize to 60fps
         this.lastTime = now;
-
-        // Update test mode speed (variable acceleration)
-        this.updateTestModeSpeed();
 
         // Check for new celebrations
         this.checkCelebrations();
