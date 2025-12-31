@@ -15,6 +15,235 @@
         body {
             font-family: 'Arial', sans-serif;
             overflow: hidden;
+            cursor: none !important;
+        }
+
+        * {
+            cursor: none !important;
+        }
+
+        button, a, .primary-continue-btn, .continue-btn, .selection-card {
+            cursor: none !important;
+        }
+
+        /* Custom Cursor */
+        .custom-cursor {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 215, 0, 0.8) 0%, rgba(255, 165, 0, 0.4) 50%, transparent 100%);
+            border: 2px solid rgba(255, 215, 0, 0.6);
+            pointer-events: none;
+            z-index: 30000;
+            transform: translate(-50%, -50%);
+            transition: none;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+            will-change: left, top;
+        }
+
+        .custom-cursor.dimmed {
+            background: radial-gradient(circle, rgba(255, 215, 0, 0.3) 0%, rgba(255, 165, 0, 0.15) 50%, transparent 100%);
+            border-color: rgba(255, 215, 0, 0.2);
+            box-shadow: 0 0 8px rgba(255, 215, 0, 0.2);
+            transition: background 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;
+        }
+
+        /* Loading Screen */
+        #loadingScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0a0a1a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 20000;
+            transition: opacity 0.8s ease;
+            overflow: hidden;
+        }
+
+        #loadingScreen.loaded {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Stars in the background */
+        .loader-stars {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .loader-star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 0 3px rgba(255, 255, 255, 0.8);
+            animation: starTwinkle 3s ease-in-out infinite;
+        }
+
+        @keyframes starTwinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        /* City skyline */
+        .loader-city {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 30%;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            z-index: 1;
+        }
+
+        .building {
+            background: linear-gradient(to top, #1a1a2e, #0f0f1a);
+            position: relative;
+            animation: buildingGlow 4s ease-in-out infinite;
+        }
+
+        .building:nth-child(1) { width: 80px; height: 180px; animation-delay: 0s; }
+        .building:nth-child(2) { width: 60px; height: 140px; animation-delay: 0.5s; }
+        .building:nth-child(3) { width: 100px; height: 220px; animation-delay: 1s; }
+        .building:nth-child(4) { width: 70px; height: 160px; animation-delay: 1.5s; }
+        .building:nth-child(5) { width: 90px; height: 200px; animation-delay: 2s; }
+        .building:nth-child(6) { width: 65px; height: 150px; animation-delay: 2.5s; }
+        .building:nth-child(7) { width: 85px; height: 190px; animation-delay: 3s; }
+
+        @keyframes buildingGlow {
+            0%, 100% {
+                box-shadow: inset 0 0 20px rgba(255, 215, 0, 0.1);
+            }
+            50% {
+                box-shadow: inset 0 0 40px rgba(255, 215, 0, 0.3);
+            }
+        }
+
+        /* Building windows */
+        .building::before {
+            content: '';
+            position: absolute;
+            top: 10%;
+            left: 15%;
+            right: 15%;
+            bottom: 10%;
+            background-image:
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 15px,
+                    rgba(255, 215, 0, 0.3) 15px,
+                    rgba(255, 215, 0, 0.3) 16px
+                ),
+                repeating-linear-gradient(
+                    90deg,
+                    transparent,
+                    transparent 15px,
+                    rgba(255, 215, 0, 0.3) 15px,
+                    rgba(255, 215, 0, 0.3) 16px
+                );
+        }
+
+        /* Preview canvas for loading screen fireworks */
+        #loaderCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .loader-content {
+            text-align: center;
+            position: relative;
+            z-index: 2;
+            animation: fadeInLoader 1s ease;
+        }
+
+        @keyframes fadeInLoader {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .loader-title {
+            font-size: 2.5rem;
+            font-weight: 900;
+            background: linear-gradient(45deg, #FFD700, #FFA500, #FFD700);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: shimmer 3s ease infinite;
+            margin-bottom: 40px;
+            letter-spacing: 2px;
+        }
+
+        .loader-bar-container {
+            width: 400px;
+            max-width: 80vw;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 0 auto 20px;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5),
+                        0 0 20px rgba(255, 215, 0, 0.2);
+        }
+
+        .loader-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #FFD700, #FFA500, #FFD700);
+            background-size: 200% 100%;
+            animation: shimmerBar 1.5s linear infinite;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+            transition: width 0.3s ease-out;
+        }
+
+        @keyframes shimmerBar {
+            0% {
+                background-position: 0% 50%;
+            }
+            100% {
+                background-position: 200% 50%;
+            }
+        }
+
+        .loader-text {
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.7);
+            letter-spacing: 1px;
+            animation: loaderTextPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes loaderTextPulse {
+            0%, 100% {
+                opacity: 0.5;
+            }
+            50% {
+                opacity: 1;
+            }
         }
 
         /* Intro Page */
@@ -24,9 +253,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3e 50%, #0a0a1a 100%);
-            background-size: 200% 200%;
-            animation: backgroundShift 10s ease infinite;
+            background: #0a0a1a;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -41,7 +268,7 @@
             50% { background-position: 100% 50%; }
         }
 
-        /* Magical sparkles with enhanced animation */
+        /* Magical sparkles with enhanced animation (optimized) */
         #introPage::before {
             content: '';
             position: absolute;
@@ -53,12 +280,9 @@
                 radial-gradient(2px 2px at 20% 30%, white, transparent),
                 radial-gradient(2px 2px at 60% 70%, white, transparent),
                 radial-gradient(1px 1px at 50% 50%, white, transparent),
-                radial-gradient(1px 1px at 80% 10%, white, transparent),
-                radial-gradient(2px 2px at 90% 60%, white, transparent),
-                radial-gradient(1px 1px at 33% 90%, white, transparent),
-                radial-gradient(2px 2px at 15% 80%, white, transparent);
+                radial-gradient(1px 1px at 80% 10%, white, transparent);
             background-size: 200% 200%;
-            animation: sparkle 8s linear infinite, sparkleMove 20s ease-in-out infinite;
+            animation: sparkle 8s linear infinite;
             opacity: 0.4;
         }
 
@@ -123,31 +347,13 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            animation: shimmer 4s ease infinite, titleFloat 3s ease-in-out infinite, titleScale 2s ease-in-out infinite;
+            animation: shimmer 4s ease infinite;
             margin-bottom: 20px;
             text-align: center;
             letter-spacing: 2px;
             position: relative;
             filter: drop-shadow(0 0 40px rgba(255, 215, 0, 0.8))
                     drop-shadow(0 5px 15px rgba(255, 165, 0, 0.5));
-        }
-
-        .intro-title::before {
-            content: attr(data-text);
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(45deg, #FFD700, #FFA500, #FFD700, #FFFFFF);
-            background-size: 400% 400%;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            filter: blur(20px);
-            opacity: 0.7;
-            animation: shimmer 3s ease infinite reverse;
-            z-index: -1;
         }
 
         @keyframes shimmer {
@@ -231,39 +437,17 @@
         }
 
         .try-it-section {
-            background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 165, 0, 0.1), rgba(255, 100, 0, 0.08));
-            border: 2px solid rgba(255, 215, 0, 0.4);
-            border-radius: 25px;
-            padding: 40px 60px;
-            margin-bottom: 40px;
-            backdrop-filter: blur(20px);
-            box-shadow: 0 8px 32px rgba(255, 215, 0, 0.2),
-                        0 0 60px rgba(255, 215, 0, 0.1),
-                        inset 0 1px 0 rgba(255, 255, 255, 0.1),
-                        inset 0 -1px 0 rgba(255, 215, 0, 0.2);
-            animation: glow 3s ease-in-out infinite, sectionScale 4s ease-in-out infinite, fadeInSection 2s ease;
-            position: relative;
-            overflow: hidden;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10000;
+            text-align: center;
+            pointer-events: none;
         }
 
-        .try-it-section::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(45deg, transparent, rgba(255, 215, 0, 0.1), transparent);
-            animation: shimmerBox 6s linear infinite;
-        }
-
-        @keyframes shimmerBox {
-            0% {
-                transform: translate(-50%, -50%) rotate(0deg);
-            }
-            100% {
-                transform: translate(-50%, -50%) rotate(360deg);
-            }
+        .try-it-section > * {
+            pointer-events: auto;
         }
 
         @keyframes glow {
@@ -304,14 +488,14 @@
         }
 
         .try-it-text {
-            font-size: 1.7rem;
-            color: rgba(255, 255, 255, 0.98);
-            margin-bottom: 15px;
-            font-weight: 800;
-            letter-spacing: 1.5px;
-            text-shadow: 0 2px 15px rgba(255, 215, 0, 0.5),
-                         0 0 40px rgba(255, 215, 0, 0.3),
-                         0 4px 8px rgba(0, 0, 0, 0.3);
+            font-size: 2.5rem;
+            color: rgba(255, 255, 255, 1);
+            margin-bottom: 25px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            text-shadow: 0 4px 20px rgba(255, 215, 0, 0.7),
+                         0 0 60px rgba(255, 215, 0, 0.5),
+                         0 6px 12px rgba(0, 0, 0, 0.4);
             animation: textPulse 3s ease-in-out infinite;
             position: relative;
             z-index: 1;
@@ -331,14 +515,14 @@
         }
 
         .click-hint {
-            font-size: 1.2rem;
-            color: rgba(255, 215, 0, 0.95);
-            margin-top: 5px;
+            font-size: 1.5rem;
+            color: rgba(255, 215, 0, 1);
+            margin-top: 10px;
             animation: pulse 2s ease infinite;
-            font-weight: 600;
-            letter-spacing: 1px;
-            text-shadow: 0 2px 20px rgba(255, 215, 0, 0.6),
-                         0 0 30px rgba(255, 165, 0, 0.4);
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-shadow: 0 3px 25px rgba(255, 215, 0, 0.8),
+                         0 0 40px rgba(255, 165, 0, 0.6);
             position: relative;
             z-index: 1;
         }
@@ -359,34 +543,20 @@
         }
 
         .rocket-icon {
-            font-size: 4.5rem;
-            margin-bottom: 20px;
-            animation: float 3s ease-in-out infinite, rocketSpin 8s linear infinite;
-            filter: drop-shadow(0 4px 15px rgba(255, 215, 0, 0.6))
-                    drop-shadow(0 0 30px rgba(255, 165, 0, 0.5));
+            font-size: 8rem;
+            margin-bottom: 40px;
+            animation: float 3s ease-in-out infinite;
+            filter: drop-shadow(0 8px 25px rgba(255, 215, 0, 0.8));
             position: relative;
             z-index: 1;
         }
 
         @keyframes float {
             0%, 100% {
-                transform: translateY(0px) rotate(-5deg);
-                filter: drop-shadow(0 4px 15px rgba(255, 215, 0, 0.6))
-                        drop-shadow(0 0 30px rgba(255, 165, 0, 0.5));
+                transform: translateY(0px);
             }
             50% {
-                transform: translateY(-20px) rotate(5deg);
-                filter: drop-shadow(0 10px 30px rgba(255, 215, 0, 0.8))
-                        drop-shadow(0 0 50px rgba(255, 165, 0, 0.7));
-            }
-        }
-
-        @keyframes rocketSpin {
-            0%, 90%, 100% {
-                transform: rotate(0deg);
-            }
-            95% {
-                transform: rotate(360deg);
+                transform: translateY(-15px);
             }
         }
 
@@ -399,6 +569,10 @@
             left: 0;
             z-index: 9998;
             cursor: crosshair;
+            pointer-events: none;
+        }
+
+        #previewCanvas.active {
             pointer-events: all;
         }
 
@@ -412,7 +586,78 @@
             pointer-events: auto;
         }
 
-        /* Continue Button */
+        /* Primary Continue Button (Initial) */
+        .primary-continue-btn {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 25%, #FFD700 50%, #FFA500 75%, #FFD700 100%);
+            background-size: 300% 300%;
+            border: 3px solid rgba(255, 255, 255, 0.5);
+            color: #000;
+            padding: 26px 70px;
+            border-radius: 50px;
+            font-size: 1.6rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+            cursor: none !important;
+            z-index: 1;
+            position: absolute;
+            left: 50%;
+            top: calc(50% + 80px);
+            transform: translateX(-50%);
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 15px 60px rgba(255, 215, 0, 0.7),
+                        0 0 100px rgba(255, 215, 0, 0.4),
+                        inset 0 2px 0 rgba(255, 255, 255, 0.6),
+                        inset 0 -2px 0 rgba(0, 0, 0, 0.2);
+            animation: primaryButtonEntrance 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) 0.5s backwards,
+                       buttonGlow 3s ease infinite 1.7s;
+        }
+
+        @keyframes primaryButtonEntrance {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) scale(1);
+            }
+        }
+
+        .primary-continue-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s ease, height 0.6s ease;
+            z-index: 0;
+        }
+
+        .primary-continue-btn:hover::before {
+            width: 400px;
+            height: 400px;
+        }
+
+        .primary-continue-btn:hover {
+            transform: translateX(-50%) scale(1.12);
+            box-shadow: 0 25px 80px rgba(255, 215, 0, 1),
+                        0 0 140px rgba(255, 215, 0, 0.6),
+                        inset 0 2px 0 rgba(255, 255, 255, 0.7),
+                        inset 0 -2px 0 rgba(0, 0, 0, 0.3);
+            border-color: rgba(255, 255, 255, 0.8);
+            letter-spacing: 3px;
+        }
+
+        .primary-continue-btn:active {
+            transform: translateX(-50%) scale(1.05);
+        }
+
+        /* Continue Button (After Rocket) */
         .continue-btn {
             position: fixed;
             bottom: 40px;
@@ -619,6 +864,10 @@
             animation-delay: 0.4s;
         }
 
+        .selection-card:nth-child(3) {
+            animation-delay: 0.6s;
+        }
+
         @keyframes cardSlideIn {
             from {
                 opacity: 0;
@@ -773,21 +1022,60 @@
     </style>
 </head>
 <body>
+    <!-- Custom Cursor -->
+    <div class="custom-cursor" id="customCursor"></div>
+
+    <!-- Loading Screen -->
+    <div id="loadingScreen">
+        <!-- Stars Background -->
+        <div class="loader-stars" id="loaderStars"></div>
+
+        <!-- City Skyline -->
+        <div class="loader-city">
+            <div class="building"></div>
+            <div class="building"></div>
+            <div class="building"></div>
+            <div class="building"></div>
+            <div class="building"></div>
+            <div class="building"></div>
+            <div class="building"></div>
+        </div>
+
+        <!-- Canvas for fireworks preview -->
+        <canvas id="loaderCanvas"></canvas>
+
+        <!-- Loading Content -->
+        <div class="loader-content">
+            <h2 class="loader-title">Preparing the Show</h2>
+            <div class="loader-bar-container">
+                <div class="loader-bar" id="loaderBar"></div>
+            </div>
+            <p class="loader-text" id="loaderText">Loading assets...</p>
+        </div>
+    </div>
+
     <!-- Intro Page -->
-    <div id="introPage">
+    <div id="introPage" style="display: none;">
         <div class="intro-content-wrapper">
             <h1 class="intro-title" data-text="Solana New Year 2026">Solana New Year 2026</h1>
             <p class="intro-subtitle">Celebrate the new year with the world</p>
-            <div class="try-it-section">
+
+            <!-- Initial Continue Button (shown first) -->
+            <button class="primary-continue-btn" id="primaryContinueBtn" onclick="showRocketTest()">
+                <span style="position: relative; z-index: 1;">Begin Experience</span>
+            </button>
+
+            <!-- Rocket Test Section (hidden initially) -->
+            <div class="try-it-section" id="tryItSection" style="display: none; opacity: 0;">
                 <div class="rocket-icon">🚀</div>
-                <p class="try-it-text">Fire Your First Rocket!</p>
+                <p class="try-it-text">Fire Your First Test Rocket!</p>
                 <p class="click-hint">✨ Click anywhere to launch ✨</p>
             </div>
         </div>
         <canvas id="previewCanvas"></canvas>
     </div>
 
-    <!-- Continue Button -->
+    <!-- Selection Continue Button (shown after rocket launch) -->
     <button class="continue-btn" id="continueBtn" onclick="showSelection()">
         Continue to Selection
     </button>
@@ -798,12 +1086,22 @@
         <p class="selection-subtitle">Pick the celebration that's right for you</p>
 
         <div class="selection-cards">
+            <!-- World Clock Version -->
+            <div class="selection-card" onclick="window.location.href='world-timer.html'">
+                <div class="card-icon">🕒</div>
+                <h3 class="card-title">World Clock</h3>
+                <p class="card-description">
+                    Track real-time New Year celebrations across every timezone with flag-themed fireworks and multilingual greetings
+                </p>
+                <span class="card-badge badge-safe">LIVE • FREE • EDUCATIONAL</span>
+            </div>
+
             <!-- Safe/Classic Version -->
             <div class="selection-card" onclick="window.location.href='index-clean.html'">
-                <div class="card-icon">🌍</div>
+                <div class="card-icon">🚀</div>
                 <h3 class="card-title">Classic</h3>
                 <p class="card-description">
-                    Family-friendly celebration with country-themed fireworks and global synchronized displays
+                    <strong>🎆 Shoot Rockets:</strong> Family-friendly celebration with country-themed fireworks and global synchronized displays
                 </p>
                 <span class="card-badge badge-safe">SAFE • FREE • NO LOGIN</span>
             </div>
@@ -811,9 +1109,9 @@
             <!-- Solana Premium Version -->
             <div class="selection-card" onclick="showWarning()">
                 <div class="card-icon">🪙</div>
-                <h3 class="card-title">Premium</h3>
+                <h3 class="card-title">Solana</h3>
                 <p class="card-description">
-                    Send custom messages, wallet integration, and token-gated premium features
+                    <strong>🎆 Shoot Rockets:</strong> Send custom messages, wallet integration, and token-gated premium features
                 </p>
                 <span class="card-badge badge-premium">PREMIUM • UNMODERATED</span>
             </div>
@@ -821,8 +1119,8 @@
     </div>
 
     <!-- Warning Modal -->
-    <div id="warningModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); z-index: 20000; align-items: center; justify-content: center; padding: 40px 20px; overflow-y: auto;">
-        <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 50px 60px; border-radius: 25px; max-width: 650px; width: 100%; border: 3px solid rgba(255, 69, 0, 0.6); box-sizing: border-box; margin: auto;">
+    <div id="warningModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); z-index: 20000; align-items: center; justify-content: center; padding: 8vh 20px; overflow-y: auto;">
+        <div style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 6vh 60px; border-radius: 25px; max-width: 650px; width: 100%; border: 3px solid rgba(255, 69, 0, 0.6); box-sizing: border-box; margin: auto;">
             <div style="text-align: center; font-size: 5rem; margin-bottom: 20px;">⚠️</div>
             <h2 style="color: #ff4444; font-size: 2.3rem; margin-bottom: 25px; text-align: center; font-weight: 800;">Content Warning</h2>
             <div style="color: rgba(255, 255, 255, 0.9); font-size: 1.15rem; line-height: 1.9; margin-bottom: 35px;">
@@ -849,21 +1147,438 @@
     </div>
 
     <script>
+        // Loading Screen Management
+        let assetsLoaded = false;
+        let canvasReady = false;
+        let rocketTestActive = false;
+        let hasLaunchedRocket = false;
+
+        // Generate stars for loading screen
+        function generateLoadingStars() {
+            const starsContainer = document.getElementById('loaderStars');
+            const starCount = 100;
+
+            for (let i = 0; i < starCount; i++) {
+                const star = document.createElement('div');
+                star.className = 'loader-star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 70 + '%'; // Keep stars in upper 70% to avoid city
+                star.style.animationDelay = Math.random() * 3 + 's';
+                star.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                starsContainer.appendChild(star);
+            }
+        }
+
+        // Loader canvas fireworks preview
+        let loaderCanvas, loaderCtx;
+        let loaderRockets = [];
+        let loaderParticles = [];
+        let loaderAnimationId;
+        let nextRocketTime = 0;
+        let loaderCountryFlags = [];
+        let userCountryCode = null;
+        let rocketsFired = 0;
+        let countryDetected = false;
+
+        // Popular countries for flags with matching firework colors
+        const popularCountries = [
+            {
+                code: 'US',
+                flag: '🇺🇸',
+                colors: [{ r: 255, g: 100, b: 100 }, { r: 100, g: 150, b: 255 }, { r: 255, g: 255, b: 255 }] // Red, Blue, White
+            },
+            {
+                code: 'GB',
+                flag: '🇬🇧',
+                colors: [{ r: 255, g: 100, b: 100 }, { r: 100, g: 150, b: 255 }, { r: 255, g: 255, b: 255 }] // Red, Blue, White
+            },
+            {
+                code: 'CA',
+                flag: '🇨🇦',
+                colors: [{ r: 255, g: 100, b: 100 }, { r: 255, g: 255, b: 255 }, { r: 255, g: 150, b: 150 }] // Red and White
+            },
+            {
+                code: 'AU',
+                flag: '🇦🇺',
+                colors: [{ r: 100, g: 150, b: 255 }, { r: 255, g: 255, b: 255 }, { r: 200, g: 220, b: 255 }] // Blue and White
+            },
+            {
+                code: 'DE',
+                flag: '🇩🇪',
+                colors: [{ r: 80, g: 80, b: 80 }, { r: 255, g: 100, b: 100 }, { r: 255, g: 215, b: 0 }] // Dark Gray, Red, Gold
+            },
+            {
+                code: 'FR',
+                flag: '🇫🇷',
+                colors: [{ r: 100, g: 150, b: 255 }, { r: 255, g: 255, b: 255 }, { r: 255, g: 100, b: 100 }] // Blue, White, Red
+            },
+            {
+                code: 'JP',
+                flag: '🇯🇵',
+                colors: [{ r: 255, g: 100, b: 100 }, { r: 255, g: 255, b: 255 }, { r: 255, g: 200, b: 200 }] // Red and White
+            },
+            {
+                code: 'BR',
+                flag: '🇧🇷',
+                colors: [{ r: 100, g: 255, b: 100 }, { r: 255, g: 215, b: 0 }, { r: 100, g: 150, b: 255 }] // Green, Yellow, Blue
+            },
+            {
+                code: 'IN',
+                flag: '🇮🇳',
+                colors: [{ r: 255, g: 165, b: 0 }, { r: 255, g: 255, b: 255 }, { r: 100, g: 200, b: 100 }] // Orange, White, Green
+            },
+            {
+                code: 'MX',
+                flag: '🇲🇽',
+                colors: [{ r: 100, g: 200, b: 100 }, { r: 255, g: 255, b: 255 }, { r: 255, g: 100, b: 100 }] // Green, White, Red
+            }
+        ];
+
+        // Default gold palette for countries not in the list
+        const defaultFireworkColors = [
+            { r: 255, g: 215, b: 0 },
+            { r: 255, g: 250, b: 240 },
+            { r: 255, g: 240, b: 200 }
+        ];
+
+        async function detectUserCountry() {
+            try {
+                const response = await fetch('https://ipapi.co/json/');
+                const data = await response.json();
+                userCountryCode = data.country_code;
+                countryDetected = true;
+            } catch (err) {
+                console.log('Could not detect country');
+                countryDetected = true; // Mark as complete even if failed
+            }
+        }
+
+        function initLoaderCanvas() {
+            loaderCanvas = document.getElementById('loaderCanvas');
+            if (!loaderCanvas) return;
+
+            loaderCanvas.width = window.innerWidth;
+            loaderCanvas.height = window.innerHeight;
+            loaderCtx = loaderCanvas.getContext('2d');
+
+            // Detect user country
+            detectUserCountry();
+
+            // Start animation
+            animateLoaderFireworks();
+
+            // Launch initial rocket after delay
+            nextRocketTime = Date.now() + 800;
+        }
+
+        function launchLoaderRocket() {
+            // Only launch 7 rockets total
+            if (rocketsFired >= 7 || !countryDetected) return;
+
+            const positions = [0.15, 0.35, 0.5, 0.65, 0.85]; // More launch positions
+            const x = loaderCanvas.width * positions[rocketsFired % positions.length];
+            const targetY = loaderCanvas.height * (0.2 + Math.random() * 0.1); // Upper 20-30%
+
+            // Determine which country this rocket represents
+            let country;
+            if (rocketsFired === 0) {
+                // First rocket: user's country (if detected) or first popular country
+                if (userCountryCode) {
+                    console.log('First rocket using detected country:', userCountryCode);
+                    country = popularCountries.find(c => c.code === userCountryCode);
+                    if (!country) {
+                        // User's country not in list, use default colors but with user's flag
+                        console.log('Country not in popular list, using default colors for:', userCountryCode);
+                        country = {
+                            code: userCountryCode,
+                            flag: getFlagEmoji(userCountryCode),
+                            colors: defaultFireworkColors
+                        };
+                    }
+                } else {
+                    // Country detection not complete yet, use first popular country
+                    console.log('First rocket: country not detected yet, using first popular country');
+                    country = popularCountries[0]; // Default to US
+                }
+                console.log('First rocket colors:', country.colors);
+            } else {
+                // Remaining rockets: cycle through popular countries
+                const availableCountries = popularCountries.filter(c =>
+                    !(rocketsFired === 0 && userCountryCode && c.code === userCountryCode)
+                );
+                const index = (rocketsFired - 1) % availableCountries.length;
+                country = availableCountries[index];
+                console.log('Rocket', rocketsFired, 'using country:', country.code, 'colors:', country.colors);
+            }
+
+            loaderRockets.push({
+                x: x,
+                y: loaderCanvas.height,
+                targetY: targetY,
+                vy: -320 - Math.random() * 80,
+                trail: [],
+                exploded: false,
+                colorPalette: country.colors,
+                country: country,
+                rocketNumber: rocketsFired
+            });
+
+            rocketsFired++;
+
+            // Schedule next rocket - faster timing to get all 7 in
+            if (rocketsFired < 7) {
+                nextRocketTime = Date.now() + 1400 + Math.random() * 600; // 1.4-2 seconds
+            }
+        }
+
+        function explodeLoaderRocket(x, y, colorPalette, country) {
+            const particleCount = 80;
+
+            for (let i = 0; i < particleCount; i++) {
+                const angle = (Math.PI * 2 * i) / particleCount;
+                const speed = 80 + Math.random() * 60;
+                const color = colorPalette[Math.floor(Math.random() * colorPalette.length)];
+
+                loaderParticles.push({
+                    x: x,
+                    y: y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    life: 1.0,
+                    color: color,
+                    size: 2 + Math.random() * 3
+                });
+            }
+
+            // Always add country flag for all 7 explosions
+            addCountryFlag(x, y, country);
+        }
+
+        function addCountryFlag(x, y, country) {
+            loaderCountryFlags.push({
+                x: x,
+                y: y,
+                flag: country.flag,
+                life: 2.0, // Show for 2 seconds
+                opacity: 1.0
+            });
+        }
+
+        // Helper function to get flag emoji from country code
+        function getFlagEmoji(countryCode) {
+            if (!countryCode || countryCode.length !== 2) return '🌍';
+            const codePoints = countryCode
+                .toUpperCase()
+                .split('')
+                .map(char => 127397 + char.charCodeAt());
+            return String.fromCodePoint(...codePoints);
+        }
+
+        function animateLoaderFireworks() {
+            // Clear entire canvas with fade to maintain consistent background
+            loaderCtx.fillStyle = 'rgba(10, 10, 26, 0.2)';
+            loaderCtx.fillRect(0, 0, loaderCanvas.width, loaderCanvas.height);
+
+            // Launch rockets periodically
+            if (Date.now() >= nextRocketTime) {
+                launchLoaderRocket();
+            }
+
+            // Update and draw rockets
+            for (let i = loaderRockets.length - 1; i >= 0; i--) {
+                const rocket = loaderRockets[i];
+
+                if (!rocket.exploded) {
+                    rocket.y += rocket.vy * 0.016;
+
+                    // Add trail only in upper area to avoid building overlap
+                    if (rocket.y < loaderCanvas.height * 0.75) {
+                        rocket.trail.push({ x: rocket.x, y: rocket.y });
+                        if (rocket.trail.length > 15) rocket.trail.shift();
+                    }
+
+                    // Draw trail - filter out points in building area
+                    loaderCtx.strokeStyle = 'rgba(255, 215, 0, 0.6)';
+                    loaderCtx.lineWidth = 2;
+                    loaderCtx.beginPath();
+                    let firstPoint = true;
+                    rocket.trail.forEach((point, index) => {
+                        if (point.y < loaderCanvas.height * 0.75) { // Only draw trail above buildings
+                            const alpha = index / rocket.trail.length;
+                            if (firstPoint) {
+                                loaderCtx.moveTo(point.x, point.y);
+                                firstPoint = false;
+                            } else {
+                                loaderCtx.lineTo(point.x, point.y);
+                            }
+                        }
+                    });
+                    loaderCtx.stroke();
+
+                    // Draw rocket head
+                    loaderCtx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                    loaderCtx.shadowBlur = 8;
+                    loaderCtx.shadowColor = 'rgba(255, 215, 0, 0.8)';
+                    loaderCtx.beginPath();
+                    loaderCtx.arc(rocket.x, rocket.y, 3, 0, Math.PI * 2);
+                    loaderCtx.fill();
+                    loaderCtx.shadowBlur = 0;
+
+                    // Check if reached target
+                    if (rocket.y <= rocket.targetY) {
+                        rocket.exploded = true;
+                        explodeLoaderRocket(rocket.x, rocket.y, rocket.colorPalette, rocket.country);
+                        loaderRockets.splice(i, 1);
+                    }
+                }
+            }
+
+            // Update and draw particles
+            for (let i = loaderParticles.length - 1; i >= 0; i--) {
+                const p = loaderParticles[i];
+
+                // Physics
+                p.vy += 20 * 0.016; // Gravity
+                p.x += p.vx * 0.016;
+                p.y += p.vy * 0.016;
+                p.life -= 0.008;
+
+                if (p.life > 0) {
+                    loaderCtx.save();
+                    loaderCtx.globalAlpha = p.life;
+                    loaderCtx.fillStyle = `rgb(${p.color.r}, ${p.color.g}, ${p.color.b})`;
+                    loaderCtx.shadowBlur = p.size * 2;
+                    loaderCtx.shadowColor = `rgba(${p.color.r}, ${p.color.g}, ${p.color.b}, 0.6)`;
+                    loaderCtx.beginPath();
+                    loaderCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    loaderCtx.fill();
+                    loaderCtx.restore();
+                } else {
+                    loaderParticles.splice(i, 1);
+                }
+            }
+
+            // Update and draw country flags
+            for (let i = loaderCountryFlags.length - 1; i >= 0; i--) {
+                const flag = loaderCountryFlags[i];
+
+                flag.life -= 0.016;
+                flag.opacity = Math.max(0, flag.life / 1.5);
+
+                if (flag.life > 0) {
+                    loaderCtx.save();
+                    loaderCtx.globalAlpha = flag.opacity;
+
+                    // Use a larger font size with proper emoji rendering
+                    // Setting font to system emoji font ensures proper aspect ratio
+                    loaderCtx.font = '48px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+                    loaderCtx.textAlign = 'center';
+                    loaderCtx.textBaseline = 'middle';
+
+                    // Subtle glow effect
+                    loaderCtx.shadowBlur = 12;
+                    loaderCtx.shadowColor = 'rgba(255, 215, 0, 0.4)';
+
+                    loaderCtx.fillText(flag.flag, flag.x, flag.y);
+                    loaderCtx.restore();
+                } else {
+                    loaderCountryFlags.splice(i, 1);
+                }
+            }
+
+            loaderAnimationId = requestAnimationFrame(animateLoaderFireworks);
+        }
+
+        function stopLoaderFireworks() {
+            if (loaderAnimationId) {
+                cancelAnimationFrame(loaderAnimationId);
+            }
+        }
+
+        // Simulate asset loading with progress synced to fireworks
+        function initializeApp() {
+            // Generate stars first
+            generateLoadingStars();
+
+            // Initialize loader canvas fireworks
+            initLoaderCanvas();
+
+            const loaderBar = document.getElementById('loaderBar');
+            const loaderText = document.getElementById('loaderText');
+            const loadingScreen = document.getElementById('loadingScreen');
+            const introPage = document.getElementById('introPage');
+
+            const messages = [
+                'Loading assets...',
+                'Preparing fireworks...',
+                'Setting up display...',
+                'Almost ready...'
+            ];
+
+            // Update progress based on actual fireworks state
+            const progressInterval = setInterval(() => {
+                let progress = 0;
+
+                // Country detection: 0-10%
+                if (countryDetected) {
+                    progress = 10;
+                }
+
+                // Each rocket adds ~12.8% progress (7 rockets = 90%)
+                progress += (rocketsFired / 7) * 90;
+
+                // Cap at 100%
+                progress = Math.min(100, progress);
+
+                // Update bar width
+                loaderBar.style.width = progress + '%';
+
+                // Update message based on progress
+                const messageIndex = Math.floor((progress / 100) * messages.length);
+                loaderText.textContent = messages[Math.min(messageIndex, messages.length - 1)];
+
+                // When all 7 rockets fired and particles are mostly gone
+                if (rocketsFired >= 7 && loaderParticles.length < 50) {
+                    clearInterval(progressInterval);
+                    loaderBar.style.width = '100%';
+                    loaderText.textContent = 'Ready!';
+
+                    setTimeout(() => {
+                        loadingScreen.classList.add('loaded');
+                        stopLoaderFireworks(); // Stop loader fireworks
+                        setTimeout(() => {
+                            loadingScreen.style.display = 'none';
+                            introPage.style.display = 'flex';
+                            assetsLoaded = true;
+                            initCanvas();
+                        }, 1000);
+                    }, 800);
+                }
+            }, 100); // Check every 100ms for smooth progress
+        }
+
+        // Initialize on page load
+        window.addEventListener('load', initializeApp);
+
         // Preview firework system (simplified gold/white rocket)
         const canvas = document.getElementById('previewCanvas');
         const ctx = canvas.getContext('2d');
         let rockets = [];
         let particles = [];
         let stars = [];
-        let hasLaunched = false;
 
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        function initCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            generateStars();
+            animate();
+            canvasReady = true;
+        }
 
         // Generate stars
         function generateStars() {
             stars = [];
-            for (let i = 0; i < 100; i++) {
+            for (let i = 0; i < 60; i++) { // Reduced from 100 to 60
                 stars.push({
                     x: Math.random() * canvas.width,
                     y: Math.random() * canvas.height * 0.6,
@@ -874,54 +1589,124 @@
             }
         }
 
-        generateStars();
-
         window.addEventListener('resize', () => {
+            if (!canvasReady) return;
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
             generateStars();
         });
 
-        // Launch rocket on click
-        canvas.addEventListener('click', (e) => {
-            launchRocket(e.clientX, e.clientY);
-            if (!hasLaunched) {
-                hasLaunched = true;
+        // Show rocket test section
+        function showRocketTest() {
+            const primaryBtn = document.getElementById('primaryContinueBtn');
+            const tryItSection = document.getElementById('tryItSection');
+            const introTitle = document.querySelector('.intro-title');
+            const introSubtitle = document.querySelector('.intro-subtitle');
+
+            // Fade out primary button, title, and subtitle
+            primaryBtn.style.transition = 'all 0.5s ease';
+            primaryBtn.style.opacity = '0';
+            primaryBtn.style.transform = 'translateX(-50%) scale(0.8)';
+
+            introTitle.style.transition = 'all 0.5s ease';
+            introTitle.style.opacity = '0';
+            introTitle.style.transform = 'translateY(-30px)';
+
+            introSubtitle.style.transition = 'all 0.5s ease';
+            introSubtitle.style.opacity = '0';
+            introSubtitle.style.transform = 'translateY(-30px)';
+
+            setTimeout(() => {
+                primaryBtn.style.display = 'none';
+                introTitle.style.display = 'none';
+                introSubtitle.style.display = 'none';
+
+                // Show rocket test section
+                tryItSection.style.display = 'block';
                 setTimeout(() => {
-                    document.getElementById('continueBtn').classList.add('visible');
-                }, 2000);
+                    tryItSection.style.transition = 'all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)';
+                    tryItSection.style.opacity = '1';
+                    tryItSection.style.transform = 'translate(-50%, -50%) scale(1)';
+                    rocketTestActive = true;
+
+                    // Enable canvas clicking
+                    canvas.classList.add('active');
+                }, 50);
+            }, 500);
+        }
+
+        // Launch rocket on click (only when test is active)
+        canvas.addEventListener('click', (e) => {
+            if (!rocketTestActive) return;
+
+            // Hide everything except background when launching
+            const tryItSection = document.getElementById('tryItSection');
+            tryItSection.style.transition = 'all 0.3s ease';
+            tryItSection.style.opacity = '0';
+            tryItSection.style.transform = 'translate(-50%, -50%) scale(0.8)';
+
+            setTimeout(() => {
+                tryItSection.style.display = 'none';
+            }, 300);
+
+            launchRocket(e.clientX, e.clientY);
+            if (!hasLaunchedRocket) {
+                hasLaunchedRocket = true;
+
+                // Disable further clicks
+                rocketTestActive = false;
+                canvas.classList.remove('active');
+
+                // Auto-progress to selection after rocket explosion
+                setTimeout(() => {
+                    showSelection();
+                }, 2500);
             }
         });
 
         function launchRocket(x, y) {
             // Make rockets go to upper third of screen for more dramatic effect
             const targetY = Math.min(y, canvas.height * 0.35);
+
+            // Calculate velocity based on height (matching the show)
+            const heightDiff = canvas.height - targetY;
+            const heightRatio = heightDiff / canvas.height;
+            const scale = 1.5; // Large version
+            const baseVelocity = 400 + (heightRatio * 2000);
+            const velocityVariation = Math.random() * 400;
+            const verticalVelocity = -(baseVelocity + velocityVariation) * Math.sqrt(scale);
+
             rockets.push({
                 x: x,
                 y: canvas.height,
                 targetY: targetY,
                 vx: 0,
-                vy: -400, // Faster initial velocity
+                vy: verticalVelocity,
                 exploded: false,
                 trail: []
             });
         }
 
         function explode(x, y) {
-            // Classic gold firework with dripping particles
-            for (let i = 0; i < 150; i++) {
-                const angle = (Math.PI * 2 * i) / 150;
-                const speed = 150 + Math.random() * 100;
+            // Classic gold firework matching the show properties (large scale)
+            const scale = 1.5; // Large version
+            const baseParticleCount = 150;
+            const particleCount = Math.floor(baseParticleCount * scale);
 
-                // Enhanced sparkle with color variation
-                const colorChoice = Math.random();
+            // Main particles
+            for (let i = 0; i < particleCount; i++) {
+                const angle = (Math.PI * 2 * i) / particleCount;
+                const speed = (150 + Math.random() * 100) * scale;
+
+                // Gold firework color variation matching the show
+                const colorVariation = Math.random();
                 let color;
-                if (colorChoice < 0.7) {
+                if (colorVariation < 0.4) {
                     color = { r: 255, g: 215, b: 0 }; // Pure gold
-                } else if (colorChoice < 0.85) {
-                    color = { r: 255, g: 250, b: 240 }; // White-gold
+                } else if (colorVariation < 0.7) {
+                    color = { r: 255, g: 250, b: 240 }; // Cream white
                 } else {
-                    color = { r: 255, g: 250, b: 230 }; // Bright white-gold sparkle
+                    color = { r: 255, g: 240, b: 200 }; // Bright golden white sparkle
                 }
 
                 particles.push({
@@ -931,8 +1716,26 @@
                     vy: Math.sin(angle) * speed,
                     life: 1.0,
                     color: color,
-                    drip: Math.random() < 0.3, // 30% chance for dripping
-                    size: 2 + Math.random() * 2
+                    drip: Math.random() < 0.3,
+                    size: (2 + Math.random() * 4) * scale
+                });
+            }
+
+            // Extra golden sparkle layer
+            const sparkleCount = Math.floor(50 * scale);
+            for (let i = 0; i < sparkleCount; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = (80 + Math.random() * 120) * scale;
+
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    life: 1.0,
+                    color: { r: 255, g: 250, b: 230 }, // Bright white-gold
+                    drip: true,
+                    size: (1 + Math.random() * 2) * scale
                 });
             }
         }
@@ -946,13 +1749,14 @@
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
             }
 
-            // Draw twinkling stars
+            // Draw twinkling stars (optimized)
             stars.forEach(star => {
                 ctx.save();
                 ctx.globalAlpha = star.opacity;
                 ctx.fillStyle = '#ffffff';
-                ctx.shadowBlur = star.size * 3;
-                ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
+                // Reduced shadow blur for better performance
+                ctx.shadowBlur = star.size * 2;
+                ctx.shadowColor = 'rgba(255, 255, 255, 0.6)';
                 ctx.beginPath();
                 ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
                 ctx.fill();
@@ -1018,21 +1822,22 @@
             for (let i = particles.length - 1; i >= 0; i--) {
                 const p = particles[i];
 
-                // Dripping particles fall faster
-                const gravity = p.drip ? 120 : 60;
+                // Much slower gravity for test rocket
+                const gravity = p.drip ? 40 : 30;
                 p.vy += gravity * 0.016;
                 p.x += p.vx * 0.016;
                 p.y += p.vy * 0.016;
 
-                // Dripping particles fade slower
-                const fadeRate = p.drip ? 0.008 : 0.012;
+                // Much slower fade rate for test rocket
+                const fadeRate = p.drip ? 0.004 : 0.006;
                 p.life -= fadeRate;
 
                 if (p.life > 0) {
                     ctx.save();
                     ctx.globalAlpha = p.life;
-                    ctx.shadowBlur = p.size * 4;
-                    ctx.shadowColor = `rgb(${p.color.r}, ${p.color.g}, ${p.color.b})`;
+                    // Reduced shadow blur for better performance
+                    ctx.shadowBlur = p.size * 2;
+                    ctx.shadowColor = `rgba(${p.color.r}, ${p.color.g}, ${p.color.b}, 0.6)`;
                     ctx.fillStyle = `rgb(${p.color.r}, ${p.color.g}, ${p.color.b})`;
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
@@ -1049,11 +1854,96 @@
         animate();
 
         function showSelection() {
-            document.getElementById('introPage').classList.add('hidden');
+            const introPage = document.getElementById('introPage');
+            const selectionPage = document.getElementById('selectionPage');
+            const continueBtn = document.getElementById('continueBtn');
+
+            // Create selection loading screen with animated fireworks and lanterns
+            const selectionLoader = document.createElement('div');
+            selectionLoader.id = 'selectionLoader';
+            selectionLoader.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(135deg, #0a0a1a 0%, #1a1a3e 50%, #0a0a1a 100%);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 15000;
+                opacity: 0;
+                transition: opacity 0.5s ease;
+                overflow: hidden;
+            `;
+            selectionLoader.innerHTML = `
+                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;">
+                    <!-- Abstract geometric particles -->
+                    <div style="position: absolute; top: 20%; left: 20%; width: 60px; height: 60px; background: radial-gradient(circle, rgba(255, 215, 0, 0.6), transparent); border-radius: 50%; animation: particleBurst 2s ease-in-out infinite;"></div>
+                    <div style="position: absolute; top: 30%; right: 25%; width: 45px; height: 45px; background: radial-gradient(circle, rgba(255, 165, 0, 0.5), transparent); border-radius: 50%; animation: particleBurst 2s ease-in-out 0.3s infinite;"></div>
+                    <div style="position: absolute; top: 60%; left: 30%; width: 35px; height: 35px; background: radial-gradient(circle, rgba(255, 215, 0, 0.4), transparent); border-radius: 50%; animation: particleBurst 2s ease-in-out 0.6s infinite;"></div>
+                    <div style="position: absolute; top: 50%; right: 20%; width: 50px; height: 50px; background: radial-gradient(circle, rgba(255, 215, 0, 0.5), transparent); border-radius: 50%; animation: particleBurst 2s ease-in-out 0.9s infinite;"></div>
+                    <div style="position: absolute; bottom: 10%; left: 15%; width: 40px; height: 40px; background: radial-gradient(circle, rgba(255, 165, 0, 0.4), transparent); border-radius: 50%; animation: lanternRise 4s ease-in-out infinite;"></div>
+                    <div style="position: absolute; bottom: 5%; right: 30%; width: 35px; height: 35px; background: radial-gradient(circle, rgba(255, 215, 0, 0.3), transparent); border-radius: 50%; animation: lanternRise 4s ease-in-out 0.8s infinite;"></div>
+                    <div style="position: absolute; bottom: 15%; left: 50%; width: 45px; height: 45px; background: radial-gradient(circle, rgba(255, 165, 0, 0.35), transparent); border-radius: 50%; animation: lanternRise 4s ease-in-out 1.2s infinite;"></div>
+                </div>
+                <div style="text-align: center; position: relative; z-index: 1;">
+                    <h2 style="font-size: 2.5rem; font-weight: 900; background: linear-gradient(45deg, #FFD700, #FFA500, #FFD700); background-size: 200% 200%; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: shimmer 3s ease infinite; letter-spacing: 2px; filter: drop-shadow(0 0 30px rgba(255, 215, 0, 0.6)); margin-bottom: 40px;">Preparing Your Options</h2>
+                    <div style="width: 400px; max-width: 80vw; height: 8px; background: rgba(255, 255, 255, 0.1); border-radius: 10px; overflow: hidden; margin: 0 auto; box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 215, 0, 0.2);">
+                        <div style="height: 100%; width: 0%; background: linear-gradient(90deg, #FFD700, #FFA500, #FFD700); background-size: 200% 100%; animation: loaderProgress 2s ease-out forwards, shimmerBar 1.5s linear infinite; border-radius: 10px; box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);"></div>
+                    </div>
+                </div>
+                <style>
+                    @keyframes particleBurst {
+                        0%, 100% {
+                            transform: scale(0.8);
+                            opacity: 0.3;
+                            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+                        }
+                        50% {
+                            transform: scale(1.5);
+                            opacity: 1;
+                            box-shadow: 0 0 60px rgba(255, 215, 0, 1);
+                        }
+                    }
+                    @keyframes lanternRise {
+                        0% {
+                            transform: translateY(0) scale(1);
+                            opacity: 0.4;
+                            box-shadow: 0 0 15px rgba(255, 165, 0, 0.4);
+                        }
+                        50% {
+                            transform: translateY(-100px) scale(1.1);
+                            opacity: 1;
+                            box-shadow: 0 0 30px rgba(255, 165, 0, 0.6);
+                        }
+                        100% {
+                            transform: translateY(-200px) scale(0.9);
+                            opacity: 0.3;
+                            box-shadow: 0 0 10px rgba(255, 165, 0, 0.2);
+                        }
+                    }
+                </style>
+            `;
+            document.body.appendChild(selectionLoader);
+
+            // Fade in loader
             setTimeout(() => {
-                document.getElementById('selectionPage').classList.add('visible');
-                document.getElementById('continueBtn').style.display = 'none';
-            }, 500);
+                selectionLoader.style.opacity = '1';
+            }, 50);
+
+            // Hide intro page
+            introPage.classList.add('hidden');
+            continueBtn.style.display = 'none';
+
+            // Show selection page after delay
+            setTimeout(() => {
+                selectionLoader.style.opacity = '0';
+                setTimeout(() => {
+                    selectionLoader.remove();
+                    selectionPage.classList.add('visible');
+                }, 500);
+            }, 2500); // Longer delay to enjoy the animation
         }
 
         function showWarning() {
@@ -1071,6 +1961,45 @@
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') closeWarning();
         });
+
+        // Custom cursor tracking with smooth animation
+        const customCursor = document.getElementById('customCursor');
+        let cursorX = 0;
+        let cursorY = 0;
+        let isMoving = false;
+
+        document.addEventListener('mousemove', (e) => {
+            cursorX = e.clientX;
+            cursorY = e.clientY;
+
+            if (!isMoving) {
+                isMoving = true;
+                updateCursor();
+            }
+        });
+
+        function updateCursor() {
+            customCursor.style.left = cursorX + 'px';
+            customCursor.style.top = cursorY + 'px';
+
+            requestAnimationFrame(() => {
+                isMoving = false;
+            });
+        }
+
+        // Dim cursor when show starts (when selection is shown)
+        function dimCursor() {
+            customCursor.classList.add('dimmed');
+        }
+
+        // Dim cursor when selection page becomes visible
+        const originalShowSelection = showSelection;
+        showSelection = function() {
+            originalShowSelection();
+            setTimeout(() => {
+                dimCursor();
+            }, 3000);
+        };
     </script>
 </body>
 </html>

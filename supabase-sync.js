@@ -79,14 +79,14 @@ class FireworkSync {
     }
 
     // Broadcast a firework launch to all users
-    async broadcastFirework(x, y, targetY, fireworkType, scale, word) {
+    async broadcastFirework(x, y, targetY, fireworkType, scale, word, isTopHolder) {
         if (!this.isConnected || !this.channel) {
             console.warn('Cannot broadcast: not connected');
             return; // Silently fail if not connected
         }
 
         try {
-            console.log('🚀 Broadcasting firework:', { x, y, targetY, fireworkType, scale, word });
+            console.log('🚀 Broadcasting firework:', { x, y, targetY, fireworkType, scale, word, isTopHolder });
             await this.channel.send({
                 type: 'broadcast',
                 event: 'launch',
@@ -98,6 +98,7 @@ class FireworkSync {
                     fireworkType: fireworkType,
                     scale: scale,
                     word: word, // Include the word with the firework
+                    isTopHolder: isTopHolder, // Include top holder status
                     timestamp: Date.now()
                 }
             });
@@ -136,7 +137,7 @@ class FireworkSync {
             window.fireworks.animate();
         }
 
-        console.log('🎆 Launching remote firework with word:', data.word);
+        console.log('🎆 Launching remote firework with word:', data.word, 'isTopHolder:', data.isTopHolder);
         // Launch the firework using the remote data
         // Use launchFireworkAt method which accepts exact coordinates and word
         window.fireworks.launchFireworkAt(
@@ -145,7 +146,8 @@ class FireworkSync {
             data.targetY,
             data.fireworkType,
             data.scale,
-            data.word  // Pass the word from the sender
+            data.word,  // Pass the word from the sender
+            data.isTopHolder  // Pass the top holder status
         );
     }
 

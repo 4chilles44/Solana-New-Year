@@ -189,6 +189,66 @@ class PhantomWalletIntegration {
             remainingRockets: Math.max(0, this.availableRockets - this.usedRockets)
         };
     }
+
+    // Start automatic balance polling for live updates
+    startBalancePolling(intervalMs = 5000) { // Default 5 seconds
+        if (this.balancePollingInterval) {
+            clearInterval(this.balancePollingInterval);
+        }
+
+        this.balancePollingInterval = setInterval(async () => {
+            if (this.publicKey) {
+                try {
+                    const oldBalance = this.tokenBalance;
+                    const oldHpBalance = this.hpTokenBalance;
+                    await this.updateTokenBalance();
+
+                    // Check if balance changed
+                    if (this.tokenBalance !== oldBalance || this.hpTokenBalance !== oldHpBalance) {
+                        console.log('Balance updated:', {
+                            old: { token: oldBalance, hp: oldHpBalance },
+                            new: { token: this.tokenBalance, hp: this.hpTokenBalance }
+                        });
+
+                        // Update tier system with new balance
+                        if (window.tierSystem) {
+                            const oldRank = window.tierSystem.getUserTier()?.rank;
+                            window.tierSystem.setUser(this.publicKey, this.tokenBalance);
+
+                            const newRank = window.tierSystem.getUserTier()?.rank;
+
+                            // Notify user of rank change
+                            if (oldRank !== newRank && newRank) {
+                                let rankMessage = `Your rank updated to #${newRank}!`;
+                                if (newRank === 1) {
+                                    rankMessage = '🎉 You are now the #1 holder! Cannon unlocked!';
+                                } else if (oldRank === 1) {
+                                    rankMessage = 'Your rank changed. Cannon control transferred.';
+                                }
+                                showNotification(rankMessage, newRank === 1 ? 'success' : 'info');
+                            }
+                        }
+
+                        // Update UI
+                        updateWalletUI(this.getStatus());
+                    }
+                } catch (error) {
+                    console.error('Error during balance polling:', error);
+                }
+            }
+        }, intervalMs);
+
+        console.log(`Started balance polling every ${intervalMs}ms`);
+    }
+
+    // Stop balance polling
+    stopBalancePolling() {
+        if (this.balancePollingInterval) {
+            clearInterval(this.balancePollingInterval);
+            this.balancePollingInterval = null;
+            console.log('Stopped balance polling');
+        }
+    }
 }
 
 // Global instance
@@ -219,6 +279,9 @@ async function toggleWalletConnection() {
 
     try {
         if (status.connected) {
+            // Stop balance polling before disconnecting
+            phantomWallet.stopBalancePolling();
+
             await phantomWallet.disconnect();
             updateWalletUI(phantomWallet.getStatus());
 
@@ -234,6 +297,9 @@ async function toggleWalletConnection() {
             if (fireworks) {
                 fireworks.randomMode = false;
             }
+
+            // Start balance polling for live updates
+            phantomWallet.startBalancePolling();
 
             // Show success message
             showNotification(`Connected! You have ${result.availableRockets} rockets available.`, 'success');

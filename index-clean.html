@@ -13,21 +13,304 @@
     <div class="custom-cursor" id="customCursor"></div>
 
     <div id="startScreen" class="start-screen">
+        <!-- Stars Background -->
+        <div class="welcome-stars" id="welcomeStars"></div>
+
+        <!-- Canvas for background fireworks -->
+        <canvas id="welcomeCanvas"></canvas>
+
         <div class="start-content">
+            <div class="globe-icon">🌍</div>
             <h1 class="game-title">New Year's Fireworks</h1>
-            <p class="game-subtitle">Light up the sky with spectacular fireworks</p>
-            <p class="game-author">Celebrate 2025 with the world</p>
-            <button class="start-btn" onclick="startFireworks()">Start Show</button>
-            <div class="controls">
-                <p>Left-click to launch fireworks</p>
-                <p>Right-click to launch a flare</p>
-                <p>Spacebar to release a lantern</p>
-                <p>Watch the magic unfold</p>
+            <p class="game-subtitle">A synchronized global celebration</p>
+
+            <button class="start-btn" onclick="startFireworks()">
+                Start Launching
+            </button>
+
+            <p class="tagline">Every click lights up the sky together</p>
+
+            <button class="share-btn" onclick="shareWithFriend()">
+                <span>Share with a Friend</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Controls Guide Overlay (shown after starting) -->
+    <div id="controlsGuide" class="controls-guide">
+        <div class="controls-guide-content">
+            <h2 class="controls-guide-title">Controls</h2>
+            <div class="controls-list">
+                <div class="guide-control-item">
+                    <span class="guide-control-key">Left-click</span>
+                    <span class="guide-control-desc">Launch fireworks</span>
+                </div>
+                <div class="guide-control-item">
+                    <span class="guide-control-key">Right-click</span>
+                    <span class="guide-control-desc">Launch a flare</span>
+                </div>
+                <div class="guide-control-item">
+                    <span class="guide-control-key">Spacebar</span>
+                    <span class="guide-control-desc">Release a lantern</span>
+                </div>
             </div>
+            <p class="controls-guide-hint">Click outside this box to start launching</p>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Welcome Screen Background Fireworks
+        let welcomeCanvas, welcomeCtx;
+        let welcomeRockets = [];
+        let welcomeParticles = [];
+        let welcomeFlags = [];
+        let welcomeAnimationId;
+        let nextWelcomeRocket = 0;
+
+        // Country colors for welcome fireworks
+        const welcomeCountries = [
+            { code: 'US', flag: '🇺🇸', colors: [{ r: 255, g: 100, b: 100 }, { r: 100, g: 150, b: 255 }, { r: 255, g: 255, b: 255 }] },
+            { code: 'GB', flag: '🇬🇧', colors: [{ r: 255, g: 100, b: 100 }, { r: 100, g: 150, b: 255 }, { r: 255, g: 255, b: 255 }] },
+            { code: 'CA', flag: '🇨🇦', colors: [{ r: 255, g: 100, b: 100 }, { r: 255, g: 255, b: 255 }, { r: 255, g: 150, b: 150 }] },
+            { code: 'FR', flag: '🇫🇷', colors: [{ r: 100, g: 150, b: 255 }, { r: 255, g: 255, b: 255 }, { r: 255, g: 100, b: 100 }] },
+            { code: 'DE', flag: '🇩🇪', colors: [{ r: 80, g: 80, b: 80 }, { r: 255, g: 100, b: 100 }, { r: 255, g: 215, b: 0 }] },
+            { code: 'JP', flag: '🇯🇵', colors: [{ r: 255, g: 100, b: 100 }, { r: 255, g: 255, b: 255 }, { r: 255, g: 200, b: 200 }] },
+            { code: 'BR', flag: '🇧🇷', colors: [{ r: 100, g: 255, b: 100 }, { r: 255, g: 215, b: 0 }, { r: 100, g: 150, b: 255 }] },
+            { code: 'IN', flag: '🇮🇳', colors: [{ r: 255, g: 165, b: 0 }, { r: 255, g: 255, b: 255 }, { r: 100, g: 200, b: 100 }] }
+        ];
+
+        function initWelcomeScreen() {
+            // Generate stars
+            const starsContainer = document.getElementById('welcomeStars');
+            for (let i = 0; i < 150; i++) {
+                const star = document.createElement('div');
+                star.style.cssText = `
+                    position: absolute;
+                    width: 2px;
+                    height: 2px;
+                    background: white;
+                    border-radius: 50%;
+                    left: ${Math.random() * 100}%;
+                    top: ${Math.random() * 70}%;
+                    opacity: ${Math.random() * 0.8 + 0.2};
+                    animation: twinkle ${2 + Math.random() * 3}s infinite;
+                `;
+                starsContainer.appendChild(star);
+            }
+
+            // Initialize canvas
+            welcomeCanvas = document.getElementById('welcomeCanvas');
+            if (!welcomeCanvas) return;
+
+            welcomeCanvas.width = window.innerWidth;
+            welcomeCanvas.height = window.innerHeight;
+            welcomeCtx = welcomeCanvas.getContext('2d');
+
+            // Start animation
+            animateWelcomeFireworks();
+            nextWelcomeRocket = Date.now() + 1000;
+        }
+
+        function launchWelcomeRocket() {
+            const country = welcomeCountries[Math.floor(Math.random() * welcomeCountries.length)];
+
+            // Launch from sides (20% chance), left/right edges (30% each), or center area (50%)
+            const launchZone = Math.random();
+            let x, targetY;
+
+            if (launchZone < 0.2) {
+                // Far left side
+                x = welcomeCanvas.width * (0.05 + Math.random() * 0.15);
+                targetY = welcomeCanvas.height * (0.2 + Math.random() * 0.2);
+            } else if (launchZone < 0.4) {
+                // Far right side
+                x = welcomeCanvas.width * (0.8 + Math.random() * 0.15);
+                targetY = welcomeCanvas.height * (0.2 + Math.random() * 0.2);
+            } else {
+                // Center area (behind content)
+                x = welcomeCanvas.width * (0.25 + Math.random() * 0.5);
+                targetY = welcomeCanvas.height * (0.15 + Math.random() * 0.15);
+            }
+
+            welcomeRockets.push({
+                x: x,
+                y: welcomeCanvas.height,
+                targetY: targetY,
+                vy: -280 - Math.random() * 60,
+                trail: [],
+                exploded: false,
+                country: country
+            });
+
+            nextWelcomeRocket = Date.now() + 1500 + Math.random() * 2000;
+        }
+
+        function explodeWelcomeRocket(x, y, country) {
+            const particleCount = 60;
+            for (let i = 0; i < particleCount; i++) {
+                const angle = (Math.PI * 2 * i) / particleCount;
+                const speed = 60 + Math.random() * 50;
+                const color = country.colors[Math.floor(Math.random() * country.colors.length)];
+
+                welcomeParticles.push({
+                    x: x,
+                    y: y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    life: 1.0,
+                    color: color,
+                    size: 2 + Math.random() * 2
+                });
+            }
+
+            welcomeFlags.push({
+                x: x,
+                y: y,
+                flag: country.flag,
+                life: 1.5,
+                opacity: 1.0
+            });
+        }
+
+        function animateWelcomeFireworks() {
+            welcomeCtx.fillStyle = 'rgba(10, 10, 26, 0.15)';
+            welcomeCtx.fillRect(0, 0, welcomeCanvas.width, welcomeCanvas.height);
+
+            if (Date.now() >= nextWelcomeRocket) {
+                launchWelcomeRocket();
+            }
+
+            // Update rockets
+            for (let i = welcomeRockets.length - 1; i >= 0; i--) {
+                const rocket = welcomeRockets[i];
+                if (!rocket.exploded) {
+                    rocket.y += rocket.vy * 0.016;
+
+                    rocket.trail.push({ x: rocket.x, y: rocket.y });
+                    if (rocket.trail.length > 15) rocket.trail.shift();
+
+                    // Draw trail
+                    welcomeCtx.strokeStyle = 'rgba(255, 215, 0, 0.5)';
+                    welcomeCtx.lineWidth = 2;
+                    welcomeCtx.beginPath();
+                    rocket.trail.forEach((point, index) => {
+                        const alpha = (index / rocket.trail.length) * 0.5;
+                        if (index === 0) {
+                            welcomeCtx.moveTo(point.x, point.y);
+                        } else {
+                            welcomeCtx.lineTo(point.x, point.y);
+                        }
+                    });
+                    welcomeCtx.stroke();
+
+                    // Draw rocket
+                    welcomeCtx.fillStyle = '#ffd700';
+                    welcomeCtx.beginPath();
+                    welcomeCtx.arc(rocket.x, rocket.y, 3, 0, Math.PI * 2);
+                    welcomeCtx.fill();
+
+                    if (rocket.y <= rocket.targetY) {
+                        rocket.exploded = true;
+                        explodeWelcomeRocket(rocket.x, rocket.y, rocket.country);
+                        welcomeRockets.splice(i, 1);
+                    }
+                }
+            }
+
+            // Update particles
+            for (let i = welcomeParticles.length - 1; i >= 0; i--) {
+                const p = welcomeParticles[i];
+                p.vy += 15 * 0.016;
+                p.x += p.vx * 0.016;
+                p.y += p.vy * 0.016;
+                p.life -= 0.01;
+
+                if (p.life > 0) {
+                    welcomeCtx.save();
+                    welcomeCtx.globalAlpha = p.life;
+                    welcomeCtx.fillStyle = `rgb(${p.color.r}, ${p.color.g}, ${p.color.b})`;
+                    welcomeCtx.shadowBlur = p.size * 2;
+                    welcomeCtx.shadowColor = `rgba(${p.color.r}, ${p.color.g}, ${p.color.b}, 0.5)`;
+                    welcomeCtx.beginPath();
+                    welcomeCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    welcomeCtx.fill();
+                    welcomeCtx.restore();
+                } else {
+                    welcomeParticles.splice(i, 1);
+                }
+            }
+
+            // Update flags
+            for (let i = welcomeFlags.length - 1; i >= 0; i--) {
+                const flag = welcomeFlags[i];
+                flag.life -= 0.016;
+                flag.opacity = Math.max(0, flag.life / 1.5);
+
+                if (flag.life > 0) {
+                    welcomeCtx.save();
+                    welcomeCtx.globalAlpha = flag.opacity;
+                    welcomeCtx.font = '36px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif';
+                    welcomeCtx.textAlign = 'center';
+                    welcomeCtx.textBaseline = 'middle';
+                    welcomeCtx.shadowBlur = 10;
+                    welcomeCtx.shadowColor = 'rgba(255, 215, 0, 0.3)';
+                    welcomeCtx.fillText(flag.flag, flag.x, flag.y);
+                    welcomeCtx.restore();
+                } else {
+                    welcomeFlags.splice(i, 1);
+                }
+            }
+
+            welcomeAnimationId = requestAnimationFrame(animateWelcomeFireworks);
+        }
+
+        function shareWithFriend() {
+            const shareData = {
+                title: 'New Year\'s Fireworks 2025',
+                text: 'Join me in celebrating the New Year with fireworks from around the world! 🎆🌍',
+                url: window.location.href
+            };
+
+            if (navigator.share) {
+                navigator.share(shareData).catch(() => {
+                    fallbackShare();
+                });
+            } else {
+                fallbackShare();
+            }
+        }
+
+        function fallbackShare() {
+            const url = window.location.href;
+            navigator.clipboard.writeText(url).then(() => {
+                const btn = event.target.closest('.share-btn');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<span>✅ Link Copied!</span>';
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                }, 2000);
+            }).catch(() => {
+                alert('Share this link: ' + url);
+            });
+        }
+
+        // Initialize on page load
+        if (document.getElementById('startScreen')) {
+            initWelcomeScreen();
+        }
+
+        // Stop animation when starting the game
+        const originalStartFireworks = window.startFireworks;
+        window.startFireworks = function() {
+            if (welcomeAnimationId) {
+                cancelAnimationFrame(welcomeAnimationId);
+            }
+            if (originalStartFireworks) {
+                originalStartFireworks();
+            }
+        };
+    </script>
     <script src="cursor-clean.js"></script>
     <script src="supabase-sync-clean.js"></script>
 </body>

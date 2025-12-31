@@ -517,14 +517,18 @@ class FireworksDisplay {
                     flare.vy += (targetVy - flare.vy) * 0.05;
                 }
             } else {
-                // Falling phase - flame-like fizzle
-                flare.vy += 20; // Slow gravity
-                flare.vx *= 0.98; // Air resistance
-                flare.life -= 0.008; // Faster fade when falling
+                // Falling phase - smooth natural fade out
+                flare.vy += 15; // Gentle gravity
+                flare.vx *= 0.96; // Gradual air resistance
+                flare.life -= 0.015; // Smooth fade when falling
 
-                // Add random flickering motion like a dying flame
-                flare.vx += (Math.random() - 0.5) * 10;
-                flare.vy += (Math.random() - 0.5) * 5;
+                // Reduce brightness smoothly
+                if (flare.brightness > 0.3) {
+                    flare.brightness *= 0.96;
+                }
+
+                // Gentle drift instead of erratic motion
+                flare.vx += (Math.random() - 0.5) * 2;
             }
 
             // Update position
@@ -657,7 +661,13 @@ class FireworksDisplay {
             swaySpeed: 0.5 + Math.random() * 0.5,
             flickerOffset: Math.random() * Math.PI * 2, // For flame flickering
             flickerSpeed: 3 + Math.random() * 2, // Faster flicker for natural flame
-            sessionId: remoteSessionId
+            sessionId: remoteSessionId,
+            // Hover tracking
+            isHovered: false,
+            hoverTime: 0,
+            hoverStartTime: 0,
+            showFlag: false,
+            location: null // Will store country/flag info
         };
 
         this.activeLanterns.push(lantern);
@@ -677,6 +687,36 @@ class FireworksDisplay {
     updateLanterns() {
         for (let i = this.activeLanterns.length - 1; i >= 0; i--) {
             const lantern = this.activeLanterns[i];
+
+            // Check if mouse is hovering over lantern
+            const hoverRadius = lantern.size * 2; // Generous hover area
+            const dx = this.mouseX - lantern.x;
+            const dy = this.mouseY - lantern.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const wasHovered = lantern.isHovered;
+            lantern.isHovered = dist < hoverRadius;
+
+            // Track hover time
+            if (lantern.isHovered) {
+                if (!wasHovered) {
+                    // Just started hovering
+                    lantern.hoverStartTime = Date.now();
+                }
+                lantern.hoverTime = (Date.now() - lantern.hoverStartTime) / 1000; // Convert to seconds
+
+                // Show flag after 4 seconds of continuous hover
+                if (lantern.hoverTime >= 4 && !lantern.showFlag) {
+                    lantern.showFlag = true;
+                    // TODO: Fetch location data for this lantern
+                    // For now, use placeholder
+                    lantern.location = lantern.sessionId ? 'Remote User' : 'You';
+                }
+            } else {
+                // Not hovering - reset hover time
+                lantern.hoverTime = 0;
+                lantern.hoverStartTime = 0;
+                lantern.showFlag = false;
+            }
 
             // Sway motion (gentle side-to-side)
             lantern.swayOffset += lantern.swaySpeed * 0.016;
@@ -719,12 +759,19 @@ class FireworksDisplay {
             // Flickering calculation (0.85 to 1.15 brightness variation)
             const flicker = 0.85 + Math.sin(lantern.flickerOffset) * 0.15 + Math.sin(lantern.flickerOffset * 1.7) * 0.1;
 
-            // Outer glow with flicker
-            const glowRadius = lantern.size * (1.8 + flicker * 0.3);
+            // Enhanced glow when hovering (after 1 second)
+            const hoverGlowMultiplier = (lantern.isHovered && lantern.hoverTime >= 1) ?
+                (1.3 + Math.sin(Date.now() / 200) * 0.2) : 1.0;
+
+            // Outer glow with flicker and hover enhancement
+            const glowRadius = lantern.size * (1.8 + flicker * 0.3) * hoverGlowMultiplier;
             const glow = this.ctx.createRadialGradient(x, y, 0, x, y, glowRadius);
-            glow.addColorStop(0, `rgba(${lantern.color.r}, ${lantern.color.g}, ${lantern.color.b}, ${0.6 * flicker})`);
-            glow.addColorStop(0.4, `rgba(${lantern.color.r}, ${lantern.color.g}, ${lantern.color.b}, ${0.3 * flicker})`);
-            glow.addColorStop(0.7, `rgba(${lantern.color.r}, ${lantern.color.g * 0.8}, ${lantern.color.b * 0.5}, ${0.15 * flicker})`);
+
+            // Brighter colors when hovering
+            const glowIntensity = hoverGlowMultiplier > 1 ? 1.3 : 1.0;
+            glow.addColorStop(0, `rgba(${lantern.color.r}, ${lantern.color.g}, ${lantern.color.b}, ${0.6 * flicker * glowIntensity})`);
+            glow.addColorStop(0.4, `rgba(${lantern.color.r}, ${lantern.color.g}, ${lantern.color.b}, ${0.3 * flicker * glowIntensity})`);
+            glow.addColorStop(0.7, `rgba(${lantern.color.r}, ${lantern.color.g * 0.8}, ${lantern.color.b * 0.5}, ${0.15 * flicker * glowIntensity})`);
             glow.addColorStop(1, `rgba(${lantern.color.r}, ${lantern.color.g}, ${lantern.color.b}, 0)`);
 
             this.ctx.fillStyle = glow;
@@ -771,6 +818,48 @@ class FireworksDisplay {
 
             this.ctx.fillStyle = innerGlow;
             this.ctx.fillRect(x - width/2, y - height/2, width, height);
+
+            // Draw flag/location after 4 seconds of hover
+            if (lantern.showFlag && lantern.location) {
+                this.ctx.save();
+
+                // Background box for flag text
+                const flagText = lantern.location;
+                this.ctx.font = 'bold 16px Arial';
+                const textWidth = this.ctx.measureText(flagText).width;
+                const boxPadding = 10;
+                const boxWidth = textWidth + boxPadding * 2;
+                const boxHeight = 30;
+                const boxX = x - boxWidth / 2;
+                const boxY = y - height - 50; // Position above lantern
+
+                // Semi-transparent background
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                this.ctx.strokeStyle = `rgba(${lantern.color.r}, ${lantern.color.g}, ${lantern.color.b}, 0.9)`;
+                this.ctx.lineWidth = 2;
+                this.ctx.beginPath();
+                this.ctx.roundRect(boxX, boxY, boxWidth, boxHeight, 8);
+                this.ctx.fill();
+                this.ctx.stroke();
+
+                // Flag text
+                this.ctx.fillStyle = '#FFD700';
+                this.ctx.textAlign = 'center';
+                this.ctx.textBaseline = 'middle';
+                this.ctx.shadowBlur = 10;
+                this.ctx.shadowColor = '#FFD700';
+                this.ctx.fillText(flagText, x, boxY + boxHeight / 2);
+
+                // Draw a small pointer arrow from box to lantern
+                this.ctx.strokeStyle = `rgba(${lantern.color.r}, ${lantern.color.g}, ${lantern.color.b}, 0.9)`;
+                this.ctx.lineWidth = 2;
+                this.ctx.beginPath();
+                this.ctx.moveTo(x, boxY + boxHeight);
+                this.ctx.lineTo(x, y - height / 2 - 5);
+                this.ctx.stroke();
+
+                this.ctx.restore();
+            }
 
             this.ctx.restore();
         });
@@ -1611,7 +1700,28 @@ window.addEventListener('load', () => {
 
 function startFireworks() {
     document.getElementById('startScreen').classList.add('hidden');
-    window.fireworks.started = true;
+
+    // Show controls guide overlay with proper animation
+    const controlsGuide = document.getElementById('controlsGuide');
+    if (controlsGuide) {
+        // Use requestAnimationFrame to ensure proper rendering
+        requestAnimationFrame(() => {
+            controlsGuide.classList.add('show');
+        });
+
+        // Hide guide when clicking outside the content box (use once to avoid multiple listeners)
+        const hideGuide = function(e) {
+            if (e.target === controlsGuide) {
+                controlsGuide.classList.remove('show');
+                window.fireworks.started = true;
+                controlsGuide.removeEventListener('click', hideGuide);
+            }
+        };
+        controlsGuide.addEventListener('click', hideGuide);
+    } else {
+        // Fallback if guide doesn't exist
+        window.fireworks.started = true;
+    }
 }
 
 // Clean version - no word menu or wallet panel functionality

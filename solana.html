@@ -8,6 +8,83 @@
 </head>
 <body>
     <canvas id="fireworksCanvas"></canvas>
+    <!-- Cooldown circles overlay (follows mouse perfectly) -->
+    <canvas id="cooldownCanvas"></canvas>
+
+    <!-- Crown Cannon (Top Holder) -->
+    <div id="crownCannon" class="crown-cannon">
+        <div class="cannon-name" id="cannonName">King</div>
+        <div class="cannon-crown">👑</div>
+        <div class="cannon-barrel"></div>
+        <div class="cannon-base"></div>
+        <div class="cannon-reload" id="cannonReload">
+            <div class="reload-bar-container">
+                <div class="reload-bar" id="reloadBar"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test Mode Selector (for testing) -->
+    <div id="testModeSelector" class="test-mode-selector">
+        <label>
+            <input type="checkbox" id="testTierCheckbox" onchange="toggleTierTest(this.checked)">
+            Test Tier System
+        </label>
+        <div class="tier-test-controls" id="tierTestControls" style="display: none;">
+            <button class="tier-test-btn" onclick="cycleTierDown()">◀ Rank Down</button>
+            <button class="tier-test-btn" onclick="cycleTierUp()">Rank Up ▶</button>
+            <button class="tier-test-btn" onclick="toggleTierEditor()">⚙️ Edit Tiers</button>
+        </div>
+    </div>
+
+    <!-- Tier Config Editor Panel -->
+    <div id="tierEditorPanel" class="tier-editor-panel hidden">
+        <div class="tier-editor-header">
+            <h3>Tier Configuration Editor</h3>
+            <button class="tier-editor-close" onclick="toggleTierEditor()">✕</button>
+        </div>
+        <div class="tier-editor-info">
+            <p>Edit values for rank <span id="editorCurrentRank">1</span>/100</p>
+            <p style="font-size: 11px; opacity: 0.7;">Changes save to tier-config.json</p>
+        </div>
+        <div class="tier-editor-controls">
+            <div class="tier-editor-field">
+                <label>Max Height (0.0=top, 1.0=bottom):</label>
+                <input type="number" id="editorMaxHeight" step="0.01" min="0" max="1" value="0.05">
+                <span class="field-value" id="editorMaxHeightValue">0.05</span>
+            </div>
+            <div class="tier-editor-field">
+                <label>Max Font Size (multiplier):</label>
+                <input type="number" id="editorMaxFontSize" step="0.01" min="0.001" max="10" value="5.0">
+                <span class="field-value" id="editorMaxFontSizeValue">5.0</span>
+            </div>
+            <div class="tier-editor-field">
+                <label>Max Rocket Size (multiplier):</label>
+                <input type="number" id="editorMaxRocketSize" step="0.01" min="0.001" max="10" value="8.0">
+                <span class="field-value" id="editorMaxRocketSizeValue">8.0</span>
+            </div>
+        </div>
+        <div class="tier-editor-actions">
+            <button class="tier-editor-btn" onclick="applyTierEdits()">Apply to Current Rank</button>
+            <button class="tier-editor-btn" onclick="downloadTierConfig()">Download Config</button>
+            <div style="margin-top: 10px; font-size: 11px; opacity: 0.7;">
+                Note: Browser can't write files directly. Use "Download Config" to save, then replace tier-config.json manually.
+            </div>
+        </div>
+    </div>
+
+    <!-- Tier Display Panel (Simplified) -->
+    <div id="tierPanel" class="tier-panel hidden">
+        <div class="tier-header">
+            <span class="tier-label">RANK</span>
+            <span class="tier-name" id="tierName">-</span>
+        </div>
+        <div class="tier-stats">
+            <div class="tier-stat">
+                <span class="stat-value" id="tierRank">-</span>
+            </div>
+        </div>
+    </div>
 
     <!-- Custom Cursor -->
     <div class="custom-cursor" id="customCursor"></div>
@@ -31,10 +108,40 @@
         <span id="notificationText"></span>
     </div>
 
+    <!-- Welcome / Rank Change Modal -->
+    <div id="rankModal" class="rank-modal hidden">
+        <div class="rank-modal-content">
+            <button class="rank-modal-close" onclick="closeRankModal()">✕</button>
+            <div class="rank-modal-icon" id="rankModalIcon">👑</div>
+            <h2 class="rank-modal-title" id="rankModalTitle">Welcome!</h2>
+            <div class="rank-modal-rank" id="rankModalRank">#1</div>
+            <p class="rank-modal-description" id="rankModalDescription"></p>
+            <div class="rank-modal-features" id="rankModalFeatures"></div>
+            <button class="rank-modal-btn" onclick="closeRankModal()">Let's Go!</button>
+        </div>
+    </div>
+
     <div id="wordMenu" class="word-menu hidden">
         <div class="menu-content">
             <h2>Customize Firework Words</h2>
             <p class="menu-hint">Add or remove words that appear in explosions</p>
+
+
+
+            <!-- Cannon Message Input (King only) -->
+            <div class="cannon-message-section" id="cannonMessageSection" style="display: none;">
+                <label for="cannonMessageText">👑 Cannon Message (Press SPACE to fire):</label>
+                <input type="text" id="cannonMessageText" placeholder="Enter your cannon message..." maxlength="100">
+                <span class="char-counter"><span id="cannonCharCount">0</span>/100</span>
+            </div>
+
+            <!-- Emoji Toggle Section -->
+            <div class="emoji-toggle-section">
+                <label class="toggle-label">
+                    <input type="checkbox" id="showRankEmoji" checked onchange="toggleRankEmoji()">
+                    <span class="toggle-text">Show rank emoji in fireworks</span>
+                </label>
+            </div>
 
             <div class="word-list" id="wordList"></div>
 
@@ -49,20 +156,117 @@
 
     <div id="startScreen" class="start-screen">
         <div class="start-content">
+            <div class="globe-icon">🪙</div>
             <h1 class="game-title">Solana New Year</h1>
-            <p class="game-subtitle">Send custom messages to the world</p>
-            <p class="game-author">Powered by Solana • Pump.fun release by 4chilles</p>
-            <button class="start-btn" onclick="startFireworks()">Start Show</button>
-            <div class="controls">
-                <p>Press M to add custom words</p>
-                <p>Click to launch fireworks with your message</p>
-                <p>Connect wallet for premium rockets</p>
+            <p class="game-subtitle">A premium celebration with custom messages</p>
+
+            <button class="start-btn" onclick="startFireworks()">
+                Start Launching
+            </button>
+
+            <p class="tagline">Send custom words that light up the global sky</p>
+
+            <button class="share-btn" onclick="shareWithFriend()">
+                <span>Share with a Friend</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Controls Guide Overlay (shown after starting) -->
+    <div id="controlsGuide" class="controls-guide">
+        <div class="controls-guide-content">
+            <h2 class="controls-guide-title">Controls</h2>
+        <div class="controls-list">
+            <div class="guide-control-item">
+                <span class="guide-control-key">Left-click</span>
+                <span class="guide-control-desc">Launch fireworks</span>
             </div>
+            <div class="guide-control-item">
+                <span class="guide-control-key">M</span>
+                <span class="guide-control-desc">Open menu to add custom words</span>
+            </div>
+        </div>
+            <p class="controls-guide-hint">Click outside this box to continue</p>
+        </div>
+    </div>
+
+    <!-- Wallet Info Guide (shown after controls) -->
+    <div id="walletGuide" class="controls-guide">
+        <div class="controls-guide-content wallet-guide-special wallet-onboarding">
+            <button class="close-guide-btn" onclick="closeWalletGuide()">✕</button>
+            <h2 class="wallet-onboarding-title">Solana New Year Token Required</h2>
+            <p class="wallet-tagline">Hold tokens to unlock exclusive premium features</p>
+
+            <div class="onboarding-grid">
+                <!-- Left: Token Info -->
+                <div class="onboarding-section">
+                    <div class="section-icon">🪙</div>
+                    <h3 class="section-title">What You Need</h3>
+                    <p class="section-desc">Hold Solana New Year tokens in your Phantom wallet to launch premium rockets with custom messages</p>
+                    <div class="token-requirement">
+                        <span class="requirement-label">Minimum:</span>
+                        <span class="requirement-value">1 Token</span>
+                    </div>
+                </div>
+
+                <!-- Center: Reward Tiers -->
+                <div class="onboarding-section highlight-section">
+                    <div class="section-icon">🏆</div>
+                    <h3 class="section-title">Exclusive Rewards</h3>
+                    <div class="reward-tiers">
+                        <div class="tier-item tier-gold">
+                            <span class="tier-rank">#1 Holder</span>
+                            <span class="tier-reward">Diamond Rocket + Custom Trail</span>
+                        </div>
+                        <div class="tier-item tier-silver">
+                            <span class="tier-rank">Top 10</span>
+                            <span class="tier-reward">Gold Rocket + Priority Launch</span>
+                        </div>
+                        <div class="tier-item tier-bronze">
+                            <span class="tier-rank">All Holders</span>
+                            <span class="tier-reward">Premium Messages + Special Effects</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Safety -->
+                <div class="onboarding-section">
+                    <div class="section-icon">🔒</div>
+                    <h3 class="section-title">100% Safe</h3>
+                    <div class="safety-features">
+                        <div class="safety-item">
+                            <span class="safety-check">✓</span>
+                            <span class="safety-text">Read-only connection</span>
+                        </div>
+                        <div class="safety-item">
+                            <span class="safety-check">✓</span>
+                            <span class="safety-text">No transactions</span>
+                        </div>
+                        <div class="safety-item">
+                            <span class="safety-check">✓</span>
+                            <span class="safety-text">No signing required</span>
+                        </div>
+                        <div class="safety-item">
+                            <span class="safety-check">✓</span>
+                            <span class="safety-text">Verify tokens only</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button class="connect-wallet-btn" onclick="connectPhantomWallet()">
+                <span class="btn-icon">👻</span>
+                Connect Phantom Wallet
+            </button>
+
+            <p class="controls-guide-hint">Click outside to skip (limited features)</p>
         </div>
     </div>
 
     <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="tier-system.js"></script>
+    <script src="wallet-rank-system.js"></script>
     <script src="cursor.js"></script>
     <script src="phantom-integration.js"></script>
     <script src="supabase-sync.js"></script>

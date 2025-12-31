@@ -34,30 +34,26 @@ class FireworksDisplay {
         this.textParticlePool = [];
         this.maxPoolSize = 5000;
 
-        // Geolocation data
-        this.userCountry = null;
-        this.userCountryName = null;
-        this.countryColors = null;
+        // Setup canvas FIRST before generating background elements
+        this.setupCanvas();
 
-        // Background elements
+        // Background elements (generated after canvas is sized)
         this.stars = [];
         this.generateStars();
         this.cityBuildings = [];
         this.generateCity();
 
-        this.setupCanvas();
         this.setupEventListeners();
         this.startAnimation();
-        this.detectUserLocation();
     }
 
     // Generate random stars
     generateStars() {
-        const starCount = 100;
+        const starCount = 250; // More stars for 2.5x larger canvas
         for (let i = 0; i < starCount; i++) {
             this.stars.push({
-                x: Math.random() * window.innerWidth,
-                y: Math.random() * (window.innerHeight * 0.4), // Top 40% of screen
+                x: Math.random() * this.canvas.width, // Use canvas width
+                y: Math.random() * (this.canvas.height * 0.4), // Top 40% of canvas
                 size: Math.random() * 1.5 + 0.5,
                 opacity: Math.random() * 0.5 + 0.3,
                 twinkleSpeed: Math.random() * 0.02 + 0.01
@@ -68,14 +64,14 @@ class FireworksDisplay {
     // Generate static city silhouette that spans full width
     generateCity() {
         this.cityBuildings = [];
-        const cityHeight = window.innerHeight * 0.165; // 10% taller (was 0.15)
+        const cityHeight = this.canvas.height * 0.165; // Use canvas height
         const buildingWidths = [60, 80, 50, 90, 70, 85, 60, 75, 55, 80, 65, 90, 100, 45];
 
         let currentX = 0;
         let buildingIndex = 0;
 
         // Generate buildings to fill the entire canvas width
-        while (currentX < window.innerWidth) {
+        while (currentX < this.canvas.width) { // Use canvas width
             const width = buildingWidths[buildingIndex % buildingWidths.length];
             // More dramatic height variation (0.4 to 1.0 instead of 0.6 to 1.0)
             const height = cityHeight * (0.4 + Math.random() * 0.6);
@@ -145,12 +141,22 @@ class FireworksDisplay {
     }
 
     setupCanvas() {
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
+        // Enlarge canvas for "zoomed out" effect to match -67% browser zoom
+        // -67% zoom = 33% of original = shows 3x content, so we need ~2.5x canvas
+        const canvasScale = 2.5;
+        this.canvas.width = window.innerWidth * canvasScale;
+        this.canvas.height = window.innerHeight * canvasScale;
+
+        // Store the actual viewport size for positioning
+        this.viewportWidth = window.innerWidth;
+        this.viewportHeight = window.innerHeight;
+        this.canvasScale = canvasScale;
 
         window.addEventListener('resize', () => {
-            this.canvas.width = window.innerWidth;
-            this.canvas.height = window.innerHeight;
+            this.canvas.width = window.innerWidth * canvasScale;
+            this.canvas.height = window.innerHeight * canvasScale;
+            this.viewportWidth = window.innerWidth;
+            this.viewportHeight = window.innerHeight;
             // Regenerate background elements for new dimensions
             this.stars = [];
             this.generateStars();
@@ -159,103 +165,42 @@ class FireworksDisplay {
         });
     }
 
-    // Detect user location using IP geolocation
-    async detectUserLocation() {
-        try {
-            const response = await fetch('https://ipapi.co/json/');
-            const data = await response.json();
-
-            this.userCountry = data.country_code;
-            this.userCountryName = data.country_name;
-
-            // Get colors for this country's flag
-            this.countryColors = this.getFlagColors(this.userCountry);
-
-            console.log(`Detected location: ${this.userCountryName} (${this.userCountry})`);
-            console.log('Flag colors:', this.countryColors);
-        } catch (err) {
-            console.error('Could not detect location:', err);
-            // Default to random country
-            this.userCountry = null;
-        }
-    }
-
-    // Get flag colors for a country code with layout information
-    // layout: 'vertical' = left-to-right stripes, 'horizontal' = top-to-bottom stripes
-    // colorStops: custom positions for gradient stops to match flag layout
-    getFlagColors(countryCode) {
-        const flagColors = {
-            // Vertical tricolor flags (left to right)
-            'FR': { colors: [{r: 0, g: 85, b: 164}, {r: 255, g: 255, b: 255}, {r: 239, g: 65, b: 53}], name: 'FRANCE', layout: 'vertical', colorStops: [0, 0.33, 0.33, 0.67, 0.67, 1] },
-            'IT': { colors: [{r: 0, g: 146, b: 70}, {r: 255, g: 255, b: 255}, {r: 206, g: 43, b: 55}], name: 'ITALY', layout: 'vertical', colorStops: [0, 0.33, 0.33, 0.67, 0.67, 1] },
-            'IE': { colors: [{r: 22, g: 155, b: 98}, {r: 255, g: 255, b: 255}, {r: 255, g: 136, b: 62}], name: 'IRELAND', layout: 'vertical', colorStops: [0, 0.33, 0.33, 0.67, 0.67, 1] },
-            'BE': { colors: [{r: 0, g: 0, b: 0}, {r: 253, g: 218, b: 36}, {r: 239, g: 51, b: 64}], name: 'BELGIUM', layout: 'vertical', colorStops: [0, 0.33, 0.33, 0.67, 0.67, 1] },
-            'RO': { colors: [{r: 0, g: 43, b: 127}, {r: 252, g: 209, b: 22}, {r: 206, g: 17, b: 38}], name: 'ROMANIA', layout: 'vertical', colorStops: [0, 0.33, 0.33, 0.67, 0.67, 1] },
-            'MX': { colors: [{r: 0, g: 104, b: 71}, {r: 255, g: 255, b: 255}, {r: 206, g: 17, b: 38}], name: 'MEXICO', layout: 'vertical', colorStops: [0, 0.33, 0.33, 0.67, 0.67, 1] },
-            'NG': { colors: [{r: 0, g: 135, b: 81}, {r: 255, g: 255, b: 255}, {r: 0, g: 135, b: 81}], name: 'NIGERIA', layout: 'vertical', colorStops: [0, 0.33, 0.33, 0.67, 0.67, 1] },
-            'PE': { colors: [{r: 217, g: 16, b: 35}, {r: 255, g: 255, b: 255}, {r: 217, g: 16, b: 35}], name: 'PERU', layout: 'vertical', colorStops: [0, 0.33, 0.33, 0.67, 0.67, 1] },
-
-            // Horizontal tricolor flags (top to bottom)
-            'DE': { colors: [{r: 0, g: 0, b: 0}, {r: 255, g: 0, b: 0}, {r: 255, g: 206, b: 0}], name: 'GERMANY', layout: 'horizontal', colorStops: [0, 0.33, 0.33, 0.67, 0.67, 1] },
-            'RU': { colors: [{r: 255, g: 255, b: 255}, {r: 0, g: 57, b: 166}, {r: 213, g: 43, b: 30}], name: 'RUSSIA', layout: 'horizontal', colorStops: [0, 0.33, 0.33, 0.67, 0.67, 1] },
-            'NL': { colors: [{r: 174, g: 28, b: 40}, {r: 255, g: 255, b: 255}, {r: 33, g: 70, b: 139}], name: 'NETHERLANDS', layout: 'horizontal', colorStops: [0, 0.33, 0.33, 0.67, 0.67, 1] },
-            'HU': { colors: [{r: 205, g: 42, b: 62}, {r: 255, g: 255, b: 255}, {r: 67, g: 111, b: 77}], name: 'HUNGARY', layout: 'horizontal', colorStops: [0, 0.33, 0.33, 0.67, 0.67, 1] },
-            'AT': { colors: [{r: 237, g: 41, b: 57}, {r: 255, g: 255, b: 255}, {r: 237, g: 41, b: 57}], name: 'AUSTRIA', layout: 'horizontal', colorStops: [0, 0.33, 0.33, 0.67, 0.67, 1] },
-            'PL': { colors: [{r: 255, g: 255, b: 255}, {r: 220, g: 20, b: 60}], name: 'POLAND', layout: 'horizontal', colorStops: [0, 0.5, 0.5, 1] },
-            'ID': { colors: [{r: 255, g: 0, b: 0}, {r: 255, g: 255, b: 255}], name: 'INDONESIA', layout: 'horizontal', colorStops: [0, 0.5, 0.5, 1] },
-            'UA': { colors: [{r: 0, g: 91, b: 187}, {r: 255, g: 221, b: 0}], name: 'UKRAINE', layout: 'horizontal', colorStops: [0, 0.5, 0.5, 1] },
-
-            // Special layout flags
-            'US': { colors: [{r: 178, g: 34, b: 52}, {r: 255, g: 255, b: 255}, {r: 60, g: 59, b: 110}], name: 'USA', layout: 'vertical', colorStops: [0, 0.4, 0.4, 0.6, 0.6, 1] },
-            'CA': { colors: [{r: 255, g: 0, b: 0}, {r: 255, g: 255, b: 255}, {r: 255, g: 0, b: 0}], name: 'CANADA', layout: 'vertical', colorStops: [0, 0.25, 0.25, 0.75, 0.75, 1] },
-            'ES': { colors: [{r: 170, g: 0, b: 0}, {r: 255, g: 196, b: 0}, {r: 170, g: 0, b: 0}], name: 'SPAIN', layout: 'horizontal', colorStops: [0, 0.25, 0.25, 0.75, 0.75, 1] },
-            'IN': { colors: [{r: 255, g: 153, b: 51}, {r: 255, g: 255, b: 255}, {r: 18, g: 136, b: 7}], name: 'INDIA', layout: 'horizontal', colorStops: [0, 0.33, 0.33, 0.67, 0.67, 1] },
-            'AR': { colors: [{r: 116, g: 172, b: 223}, {r: 255, g: 255, b: 255}, {r: 116, g: 172, b: 223}], name: 'ARGENTINA', layout: 'horizontal', colorStops: [0, 0.33, 0.33, 0.67, 0.67, 1] },
-            'CO': { colors: [{r: 252, g: 209, b: 22}, {r: 0, g: 56, b: 168}, {r: 206, g: 17, b: 38}], name: 'COLOMBIA', layout: 'horizontal', colorStops: [0, 0.5, 0.5, 0.75, 0.75, 1] },
-
-            // Nordic cross flags (approximated as vertical)
-            'SE': { colors: [{r: 0, g: 106, b: 167}, {r: 254, g: 204, b: 0}, {r: 0, g: 106, b: 167}], name: 'SWEDEN', layout: 'vertical', colorStops: [0, 0.4, 0.4, 0.6, 0.6, 1] },
-            'NO': { colors: [{r: 186, g: 12, b: 47}, {r: 255, g: 255, b: 255}, {r: 0, g: 40, b: 104}], name: 'NORWAY', layout: 'vertical', colorStops: [0, 0.4, 0.4, 0.6, 0.6, 1] },
-            'FI': { colors: [{r: 255, g: 255, b: 255}, {r: 0, g: 47, b: 108}, {r: 255, g: 255, b: 255}], name: 'FINLAND', layout: 'vertical', colorStops: [0, 0.4, 0.4, 0.6, 0.6, 1] },
-            'DK': { colors: [{r: 198, g: 12, b: 48}, {r: 255, g: 255, b: 255}, {r: 198, g: 12, b: 48}], name: 'DENMARK', layout: 'vertical', colorStops: [0, 0.4, 0.4, 0.6, 0.6, 1] },
-
-            // Solid with emblem (using dominant colors)
-            'JP': { colors: [{r: 255, g: 255, b: 255}, {r: 188, g: 0, b: 45}, {r: 255, g: 255, b: 255}], name: 'JAPAN', layout: 'vertical', colorStops: [0, 0.4, 0.4, 0.6, 0.6, 1] },
-            'CN': { colors: [{r: 222, g: 41, b: 16}, {r: 255, g: 222, b: 0}, {r: 222, g: 41, b: 16}], name: 'CHINA', layout: 'vertical', colorStops: [0, 0.3, 0.3, 0.7, 0.7, 1] },
-            'BR': { colors: [{r: 0, g: 156, b: 59}, {r: 254, g: 223, b: 0}, {r: 0, g: 39, b: 118}], name: 'BRAZIL', layout: 'gradient', colorStops: [0, 0.4, 0.6, 1] },
-            'AU': { colors: [{r: 0, g: 0, b: 139}, {r: 255, g: 255, b: 255}, {r: 255, g: 0, b: 0}], name: 'AUSTRALIA', layout: 'gradient', colorStops: [0, 0.5, 1] },
-            'KR': { colors: [{r: 255, g: 255, b: 255}, {r: 205, g: 37, b: 44}, {r: 0, g: 71, b: 160}], name: 'SOUTH KOREA', layout: 'gradient', colorStops: [0, 0.5, 1] },
-            'ZA': { colors: [{r: 0, g: 119, b: 73}, {r: 252, g: 209, b: 22}, {r: 222, g: 56, b: 49}, {r: 0, g: 46, b: 95}], name: 'SOUTH AFRICA', layout: 'gradient', colorStops: [0, 0.33, 0.67, 1] },
-            'GB': { colors: [{r: 1, g: 33, b: 105}, {r: 255, g: 255, b: 255}, {r: 200, g: 16, b: 46}], name: 'UNITED KINGDOM', layout: 'gradient', colorStops: [0, 0.5, 1] },
-            'NZ': { colors: [{r: 0, g: 36, b: 125}, {r: 204, g: 0, b: 51}, {r: 255, g: 255, b: 255}], name: 'NEW ZEALAND', layout: 'gradient', colorStops: [0, 0.5, 1] },
-            'CH': { colors: [{r: 255, g: 0, b: 0}, {r: 255, g: 255, b: 255}, {r: 255, g: 0, b: 0}], name: 'SWITZERLAND', layout: 'vertical', colorStops: [0, 0.4, 0.4, 0.6, 0.6, 1] },
-            'PT': { colors: [{r: 0, g: 102, b: 0}, {r: 255, g: 0, b: 0}], name: 'PORTUGAL', layout: 'vertical', colorStops: [0, 0.4, 0.4, 1] },
-            'GR': { colors: [{r: 13, g: 94, b: 175}, {r: 255, g: 255, b: 255}, {r: 13, g: 94, b: 175}], name: 'GREECE', layout: 'horizontal', colorStops: [0, 0.4, 0.4, 0.6, 0.6, 1] },
-            'TR': { colors: [{r: 227, g: 10, b: 23}, {r: 255, g: 255, b: 255}, {r: 227, g: 10, b: 23}], name: 'TURKEY', layout: 'vertical', colorStops: [0, 0.4, 0.4, 0.6, 0.6, 1] },
-            'SG': { colors: [{r: 237, g: 27, b: 46}, {r: 255, g: 255, b: 255}], name: 'SINGAPORE', layout: 'horizontal', colorStops: [0, 0.5, 0.5, 1] },
-            'TH': { colors: [{r: 237, g: 28, b: 36}, {r: 255, g: 255, b: 255}, {r: 45, g: 42, b: 74}], name: 'THAILAND', layout: 'horizontal', colorStops: [0, 0.2, 0.2, 0.4, 0.4, 0.6, 0.6, 0.8, 0.8, 1] },
-            'PH': { colors: [{r: 0, g: 56, b: 168}, {r: 206, g: 17, b: 38}, {r: 255, g: 255, b: 255}, {r: 252, g: 209, b: 22}], name: 'PHILIPPINES', layout: 'gradient', colorStops: [0, 0.33, 0.67, 1] },
-            'MY': { colors: [{r: 204, g: 0, b: 0}, {r: 255, g: 255, b: 255}, {r: 0, g: 0, b: 128}, {r: 252, g: 196, b: 0}], name: 'MALAYSIA', layout: 'gradient', colorStops: [0, 0.33, 0.67, 1] },
-            'VN': { colors: [{r: 218, g: 37, b: 29}, {r: 255, g: 255, b: 0}, {r: 218, g: 37, b: 29}], name: 'VIETNAM', layout: 'vertical', colorStops: [0, 0.4, 0.4, 0.6, 0.6, 1] },
-            'CL': { colors: [{r: 0, g: 56, b: 168}, {r: 255, g: 255, b: 255}, {r: 215, g: 0, b: 21}], name: 'CHILE', layout: 'gradient', colorStops: [0, 0.5, 1] },
-            'CZ': { colors: [{r: 17, g: 69, b: 126}, {r: 255, g: 255, b: 255}, {r: 215, g: 20, b: 26}], name: 'CZECH REPUBLIC', layout: 'gradient', colorStops: [0, 0.5, 1] },
-            'IL': { colors: [{r: 0, g: 56, b: 184}, {r: 255, g: 255, b: 255}, {r: 0, g: 56, b: 184}], name: 'ISRAEL', layout: 'horizontal', colorStops: [0, 0.15, 0.15, 0.85, 0.85, 1] },
-            'AE': { colors: [{r: 0, g: 122, b: 61}, {r: 255, g: 255, b: 255}, {r: 0, g: 0, b: 0}], name: 'UNITED ARAB EMIRATES', layout: 'horizontal', colorStops: [0, 0.33, 0.33, 0.67, 0.67, 1] },
-            'SA': { colors: [{r: 0, g: 98, b: 56}, {r: 255, g: 255, b: 255}, {r: 0, g: 98, b: 56}], name: 'SAUDI ARABIA', layout: 'vertical', colorStops: [0, 0.4, 0.4, 0.6, 0.6, 1] },
-            'EG': { colors: [{r: 206, g: 17, b: 38}, {r: 255, g: 255, b: 255}, {r: 0, g: 0, b: 0}], name: 'EGYPT', layout: 'horizontal', colorStops: [0, 0.33, 0.33, 0.67, 0.67, 1] },
-            'KE': { colors: [{r: 0, g: 0, b: 0}, {r: 188, g: 20, b: 26}, {r: 0, g: 104, b: 56}], name: 'KENYA', layout: 'horizontal', colorStops: [0, 0.33, 0.33, 0.67, 0.67, 1] },
-        };
-
-        return flagColors[countryCode] || null;
-    }
-
     setupEventListeners() {
         // Track if random mode is enabled
         this.randomMode = true;
 
+        // Track free rocket usage (only 1 free rocket allowed)
+        this.freeRocketUsed = false;
+
         // Shared launch handler for both mouse and touch
-        const handleLaunch = (x) => {
+        const handleLaunch = (x, y) => {
             if (!this.started) return;
+
+            // Check regular shot cooldown (4 seconds for everyone)
+            if (!regularShotReady) {
+                const remaining = Math.max(0, regularShotCooldownEndTime - Date.now());
+                console.log(`Regular shot on cooldown: ${(remaining / 1000).toFixed(1)}s remaining`);
+                return;
+            }
+
+            // If tier test mode is enabled, bypass wallet checks
+            const tierTestCheckbox = document.getElementById('testTierCheckbox');
+            const isTierTesting = tierTestCheckbox && tierTestCheckbox.checked;
+
+            if (isTierTesting) {
+                // Unlimited rockets in test mode (universal 4s cooldown handled above)
+                this.userPoints = Math.floor(Math.random() * 80) + 1;
+                this.launchRocket(x, y); // Pass Y coordinate for aiming
+
+                // Start regular shot cooldown
+                regularShotReady = false;
+                regularShotCooldownEndTime = Date.now() + REGULAR_SHOT_COOLDOWN;
+                setTimeout(() => {
+                    regularShotReady = true;
+                }, REGULAR_SHOT_COOLDOWN);
+
+                return;
+            }
 
             // Check if wallet is connected (phantomWallet is defined in phantom-integration.js)
             if (typeof phantomWallet !== 'undefined') {
@@ -275,31 +220,82 @@ class FireworksDisplay {
                     // Set random points for this launch
                     this.userPoints = Math.floor(Math.random() * 80) + 1;
                 } else {
-                    // Random mode when not connected
-                    if (this.randomMode) {
-                        this.userPoints = Math.floor(Math.random() * 80) + 1;
+                    // Not connected - allow 1 free demo rocket
+                    if (!this.freeRocketUsed) {
+                        // First rocket is free - special Solana demo rocket
+                        this.freeRocketUsed = true;
+                        this.launchSolanaDemo(x);
+                        return;
+                    } else {
+                        // Show token requirement message
+                        showTokenRequirementMessage();
+                        return;
                     }
                 }
             } else {
-                // Fallback if phantom integration not loaded
-                if (this.randomMode) {
-                    this.userPoints = Math.floor(Math.random() * 80) + 1;
+                // Fallback if phantom integration not loaded - allow 1 free rocket
+                if (!this.freeRocketUsed) {
+                    this.freeRocketUsed = true;
+                    this.launchSolanaDemo(x);
+                    return;
+                } else {
+                    showTokenRequirementMessage();
+                    return;
                 }
             }
 
-            this.launchRocket(x);
+            this.launchRocket(x, y); // Pass Y for aiming
         };
 
         // Mouse events
         document.addEventListener('mousedown', (e) => {
-            handleLaunch(e.clientX);
+            // Left-click only
+            if (e.button === 0) {
+                // Scale mouse coordinates to match canvas size
+                const scaledX = e.clientX * this.canvasScale;
+                const scaledY = e.clientY * this.canvasScale;
+                handleLaunch(scaledX, scaledY);
+            }
+        });
+
+        // Right-click handler for top 15 users (small rapid rockets)
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault(); // Always prevent context menu
+
+            if (!this.started) return;
+
+            // Top 15 holders (excluding King) get small rapid rockets on right-click
+            const tierInfo = window.tierSystem?.getUserTier();
+            if (tierInfo && tierInfo.rank && tierInfo.rank <= 15 && tierInfo.rank > 1) {
+                // Check if top 15 rocket is on cooldown
+                if (!top15RocketReady) {
+                    const remaining = Math.max(0, top15RocketCooldownEndTime - Date.now());
+                    console.log(`Top 15 rocket on cooldown: ${(remaining / 1000).toFixed(1)}s remaining`);
+                    return;
+                }
+
+                const scaledX = e.clientX * this.canvasScale;
+                const scaledY = e.clientY * this.canvasScale;
+                this.fireTop15Rocket(scaledX, scaledY);
+
+                // Start 5-second cooldown
+                top15RocketReady = false;
+                top15RocketCooldownEndTime = Date.now() + TOP15_ROCKET_COOLDOWN;
+                setTimeout(() => {
+                    top15RocketReady = true;
+                }, TOP15_ROCKET_COOLDOWN);
+            }
+            // King's right-click is handled in initCannonTracking
         });
 
         // Touch events for mobile
         document.addEventListener('touchstart', (e) => {
             e.preventDefault(); // Prevent default touch behavior
             if (e.touches.length > 0) {
-                handleLaunch(e.touches[0].clientX);
+                // Scale touch coordinates to match canvas size
+                const scaledX = e.touches[0].clientX * this.canvasScale;
+                const scaledY = e.touches[0].clientY * this.canvasScale;
+                handleLaunch(scaledX, scaledY);
             }
         });
     }
@@ -412,18 +408,96 @@ class FireworksDisplay {
         return minTextSize + (normalizedValue * (maxTextSize - minTextSize));
     }
 
-    launchRocket(x) {
-        const scale = this.getFireworkScale();
-        const targetY = this.getExplosionHeight();
+    // Top 15 rapid-fire rocket (small size = 0.44, same as minimum)
+    fireTop15Rocket(x, clickY) {
+        // Hardcoded small size for rapid fire (matches rank #100 minimum)
+        const scale = 0.44;
+        const textSizeMultiplier = 0.44;
+        const targetY = clickY || (this.canvas.height * 0.5); // Aim at click or middle
+
+        // Calculate velocity for target
+        const heightDiff = this.canvas.height - targetY;
+        const heightRatio = heightDiff / this.canvas.height;
+        const horizontalDrift = 0; // Accurate aiming
+        const baseVelocity = 400 + (heightRatio * 2000);
+        const velocityVariation = Math.random() * 400;
+        const verticalVelocity = -(baseVelocity + velocityVariation) * Math.sqrt(Math.max(scale, 0.5));
+
+        const fireworkType = this.randomFireworkType();
+
+        const rocket = {
+            x: x,
+            y: this.canvas.height + 20,
+            vx: horizontalDrift,
+            vy: verticalVelocity,
+            targetY: targetY,
+            trail: [],
+            color: fireworkType.color,
+            secondaryColor: fireworkType.secondaryColor || fireworkType.color,
+            tertiaryColor: fireworkType.tertiaryColor || fireworkType.color,
+            quaternaryColor: fireworkType.quaternaryColor || fireworkType.color,
+            fireworkType: fireworkType.type,
+            drip: fireworkType.drip,
+            countryName: fireworkType.countryName || null,
+            exploded: false,
+            scale: scale,
+            textScale: textSizeMultiplier,
+            selectedWord: this.getRandomWord()
+        };
+
+        this.rockets.push(rocket);
+    }
+
+    launchRocket(x, clickY = null) {
+        // Get tier-based properties if tier system is available
+        let scale, targetY, textSizeMultiplier, maxHeight;
+
+        if (window.tierSystem) {
+            const tierInfo = window.tierSystem.getUserTier();
+
+            if (tierInfo && tierInfo.rocketSize) {
+                scale = tierInfo.rocketSize; // 0.008-8.0 based on rank
+                textSizeMultiplier = tierInfo.textSize; // 0.008-5.0 based on rank
+
+                // Top 15% (percentile <= 15) can aim ANYWHERE
+                // Lower tiers have max height caps
+                const canAimAnywhere = tierInfo.percentile <= 15;
+
+                if (canAimAnywhere) {
+                    // Top 15%: aim wherever they click, or use default height
+                    if (clickY !== null) {
+                        targetY = clickY;
+                    } else {
+                        targetY = this.canvas.height * tierInfo.rocketHeight;
+                    }
+                } else {
+                    // Lower tiers: capped at max height
+                    maxHeight = this.canvas.height * tierInfo.rocketHeight; // 0.05-0.95
+                    if (clickY !== null) {
+                        targetY = Math.max(clickY, maxHeight); // Can't go higher than tier allows
+                    } else {
+                        targetY = maxHeight;
+                    }
+                }
+            } else {
+                // Fallback if tier not available
+                scale = this.getFireworkScale();
+                targetY = this.getExplosionHeight();
+                textSizeMultiplier = 1.0;
+            }
+        } else {
+            // No tier system, use old random method
+            scale = this.getFireworkScale();
+            targetY = this.getExplosionHeight();
+            textSizeMultiplier = 1.0;
+        }
 
         // Calculate height difference to determine arc intensity
         const heightDiff = this.canvas.height - targetY;
         const heightRatio = heightDiff / this.canvas.height;
 
-        // For tall fireworks, add significant horizontal arc
-        // Higher explosions get more arc (up to 300px horizontal drift)
-        const arcIntensity = heightRatio > 0.5 ? (heightRatio - 0.5) * 2 : 0;
-        const horizontalDrift = (Math.random() - 0.5) * (50 + arcIntensity * 250);
+        // Aim directly at X position (no random drift for accurate aiming)
+        const horizontalDrift = 0;
 
         // Increase velocity based on height - taller targets need EXTREME speed
         // Base velocity increases massively for tall shots to reach top of screen
@@ -450,7 +524,8 @@ class FireworksDisplay {
             drip: fireworkType.drip,
             countryName: fireworkType.countryName || null,
             exploded: false,
-            scale: scale
+            scale: scale,
+            textScale: textSizeMultiplier // Store for text sizing
         };
 
         // Pre-select the word for this rocket so we can broadcast it
@@ -460,11 +535,48 @@ class FireworksDisplay {
             rocket.selectedWord = this.getRandomWord();
         }
 
+        // Add special emojis for top 10 holders (New Year & wealth themed)
+        const tierInfo = window.tierSystem?.getUserTier();
+        if (tierInfo && tierInfo.rank <= 10 && showRankEmoji) { // Check showRankEmoji setting
+            let emoji = '';
+
+            // Assign emoji based on rank
+            switch(tierInfo.rank) {
+                case 1:
+                    emoji = '👑'; // Crown - King
+                    rocket.isTopHolder = true;
+                    break;
+                case 2:
+                    emoji = '🍾'; // Champagne bottle - Second place luxury
+                    break;
+                case 3:
+                    emoji = '✨'; // Sparkles - Third place magic
+                    break;
+                case 4:
+                case 5:
+                case 6:
+                case 7:
+                case 8:
+                case 9:
+                case 10:
+                    emoji = '🥂'; // Champagne glass - Top 10 celebration
+                    break;
+            }
+
+            if (rocket.selectedWord) {
+                // Emoji above words if text exists
+                rocket.selectedWord = emoji + ' ' + rocket.selectedWord;
+            } else {
+                // Emoji in middle if no text
+                rocket.selectedWord = emoji;
+            }
+        }
+
         this.rockets.push(rocket);
 
         // Broadcast to other users if sync is enabled
         if (window.fireworkSync && window.fireworkSync.isConnected) {
-            window.fireworkSync.broadcastFirework(x, this.canvas.height + 20, targetY, fireworkType, scale, rocket.selectedWord);
+            window.fireworkSync.broadcastFirework(x, this.canvas.height + 20, targetY, fireworkType, scale, rocket.selectedWord, rocket.isTopHolder);
         }
 
         // Return data for multiplayer sync
@@ -475,8 +587,116 @@ class FireworksDisplay {
         };
     }
 
+    // Launch special Solana demo rocket (sized like rank #55, says "Solana")
+    launchSolanaDemo(x) {
+        // Official Solana brand gradient colors (from logo)
+        const solanaColors = {
+            magenta: { r: 220, g: 31, b: 255 },   // #DC1FFF (left side)
+            blue: { r: 131, g: 145, b: 255 },     // #8391FF (middle)
+            cyan: { r: 0, g: 255, b: 199 }        // #00FFC7 (right side)
+        };
+
+        // Use properties that match rank #55 (mid-tier sizing and height)
+        const scale = 0.204; // Rank 55 scale
+        const textScale = 1.37; // Rank 55 text size
+        const targetY = this.canvas.height * 0.639; // Rank 55 height (64% up screen)
+
+        const heightDiff = this.canvas.height - targetY;
+        const heightRatio = heightDiff / this.canvas.height;
+
+        // Minimal horizontal drift
+        const horizontalDrift = (Math.random() - 0.5) * 20;
+
+        // Calculate velocity based on height (like regular rockets)
+        const baseVelocity = 400 + (heightRatio * 2000);
+        const verticalVelocity = -(baseVelocity);
+
+        const rocket = {
+            x: x,
+            y: this.canvas.height + 20,
+            vx: horizontalDrift,
+            vy: verticalVelocity,
+            targetY: targetY,
+            trail: [],
+            color: solanaColors.magenta,
+            secondaryColor: solanaColors.blue,
+            tertiaryColor: solanaColors.cyan,
+            quaternaryColor: solanaColors.blue,
+            fireworkType: 'standard',
+            drip: false,
+            countryName: null,
+            exploded: false,
+            scale: scale, // Rank 55 scale
+            selectedWord: 'SOLANA', // Always says "Solana"
+            isSolanaDemo: true, // Mark as demo rocket
+            // Store Solana gradient info for text rendering
+            solanaGradient: true,
+            solanaColors: [solanaColors.magenta, solanaColors.blue, solanaColors.cyan],
+            textScale: textScale // Rank 55 text size
+        };
+
+        this.rockets.push(rocket);
+
+        // No notification after first rocket - user will discover on their own
+    }
+
+    // Launch special rank rocket that shows user's holder number
+    launchRankRocket(x, rank) {
+        // Gold colors for rank rocket
+        const rankColors = {
+            gold: { r: 255, g: 215, b: 0 },      // Gold
+            orange: { r: 255, g: 140, b: 0 }     // Dark Orange
+        };
+
+        // Medium height rocket
+        const targetY = this.canvas.height * 0.4; // 60% up the screen
+        const heightDiff = this.canvas.height - targetY;
+        const heightRatio = heightDiff / this.canvas.height;
+
+        // Minimal horizontal drift for center launch
+        const horizontalDrift = (Math.random() - 0.5) * 30;
+
+        // Medium velocity
+        const baseVelocity = 400 + (heightRatio * 1500);
+        const verticalVelocity = -(baseVelocity);
+
+        const rocket = {
+            x: x,
+            y: this.canvas.height + 20,
+            vx: horizontalDrift,
+            vy: verticalVelocity,
+            targetY: targetY,
+            trail: [],
+            color: `rgb(${rankColors.gold.r}, ${rankColors.gold.g}, ${rankColors.gold.b})`,
+            secondaryColor: `rgb(${rankColors.orange.r}, ${rankColors.orange.g}, ${rankColors.orange.b})`,
+            tertiaryColor: `rgb(${rankColors.gold.r}, ${rankColors.gold.g}, ${rankColors.gold.b})`,
+            quaternaryColor: `rgb(${rankColors.orange.r}, ${rankColors.orange.g}, ${rankColors.orange.b})`,
+            fireworkType: 'standard',
+            drip: false,
+            countryName: null,
+            exploded: false,
+            scale: 0.8, // Medium scale
+            selectedWord: `#${rank}`, // Show rank number
+            isRankRocket: true // Mark as rank rocket
+        };
+
+        this.rockets.push(rocket);
+
+        // Broadcast to other users if sync is enabled
+        if (window.fireworkSync && window.fireworkSync.isConnected) {
+            window.fireworkSync.broadcastFirework(x, this.canvas.height + 20, targetY, {
+                color: rocket.color,
+                secondaryColor: rocket.secondaryColor,
+                tertiaryColor: rocket.tertiaryColor,
+                quaternaryColor: rocket.quaternaryColor,
+                type: 'standard',
+                drip: false
+            }, 0.8, `#${rank}`);
+        }
+    }
+
     // Launch a firework at specific coordinates (for remote sync)
-    launchFireworkAt(x, y, targetY, fireworkType, scale, word) {
+    launchFireworkAt(x, y, targetY, fireworkType, scale, word, isTopHolder) {
         // Calculate height difference to determine arc intensity
         const heightDiff = this.canvas.height - targetY;
         const heightRatio = heightDiff / this.canvas.height;
@@ -507,7 +727,8 @@ class FireworksDisplay {
             countryName: fireworkType.countryName || null,
             exploded: false,
             scale: scale,
-            selectedWord: word  // Use the word sent from the remote user
+            selectedWord: word,  // Use the word sent from the remote user
+            isTopHolder: isTopHolder  // Mark if from top holder
         };
 
         this.rockets.push(rocket);
@@ -585,6 +806,16 @@ class FireworksDisplay {
     explodeRocket(rocket) {
         rocket.exploded = true;
 
+        // Check if this is a mega-crown or big-crown explosion (object type)
+        const isMegaCrown = typeof rocket.fireworkType === 'object' &&
+            (rocket.fireworkType.type === 'mega-crown' || rocket.fireworkType.type === 'big-crown');
+
+        if (isMegaCrown) {
+            console.log('💥 Creating mega/big crown explosion!');
+            this.createMegaCrownExplosion(rocket);
+            return;
+        }
+
         const scale = rocket.scale;
         const isClassic = rocket.drip;
         const isGold = rocket.fireworkType === 'classic-gold';
@@ -619,8 +850,26 @@ class FireworksDisplay {
 
             const particle = this.getParticle();
 
+            // Solana demo rockets use Solana gradient colors with slow, beautiful fall
+            if (rocket.solanaGradient) {
+                const colorChoice = Math.random();
+                if (colorChoice < 0.33) {
+                    particle.color = rocket.color; // Magenta
+                } else if (colorChoice < 0.67) {
+                    particle.color = rocket.secondaryColor; // Blue
+                } else {
+                    particle.color = rocket.tertiaryColor; // Cyan
+                }
+                // Much slower decay for longer-lasting particles
+                particle.decay = 0.005 + Math.random() * 0.003; // Slower decay
+                // Lower gravity for graceful, slow fall
+                particle.gravity = 20 + Math.random() * 30; // Gentler gravity
+                // Particle size fully controlled by scale (no minimum)
+                particle.size = (0.5 + Math.random() * 1.5) * scale * 4;
+                particle.drip = true; // Enable drip for nice trailing effect
+            }
             // Country-themed fireworks use flag colors
-            if (isCountry) {
+            else if (isCountry) {
                 const colorChoice = Math.random();
                 if (colorChoice < 0.25) {
                     particle.color = rocket.color;
@@ -633,7 +882,7 @@ class FireworksDisplay {
                 }
                 particle.decay = 0.012 + Math.random() * 0.008;
                 particle.gravity = 60 + Math.random() * 60;
-                particle.size = (2 + Math.random() * 3) * scale;
+                particle.size = (0.5 + Math.random() * 1.5) * scale * 3.3;
                 particle.drip = false;
             }
             // Classic fireworks have special dripping behavior
@@ -649,11 +898,11 @@ class FireworksDisplay {
                         // Bright golden white sparkle
                         particle.color = { r: 255, g: 240, b: 200 };
                     }
-                    particle.size = (2 + Math.random() * 4) * scale; // Varied particle sizes for complexity
+                    particle.size = (0.5 + Math.random() * 1.5) * scale * 4; // Varied particle sizes for complexity
                 } else {
                     // Other classic types
                     particle.color = Math.random() < 0.5 ? rocket.color : rocket.secondaryColor;
-                    particle.size = (3 + Math.random() * 3) * scale;
+                    particle.size = (0.5 + Math.random() * 1.5) * scale * 4;
                 }
 
                 particle.decay = 0.008 + Math.random() * 0.005; // Slower decay for dripping
@@ -665,7 +914,7 @@ class FireworksDisplay {
                 particle.color = rocket.color;
                 particle.decay = 0.015 + Math.random() * 0.01;
                 particle.gravity = 50 + Math.random() * 50;
-                particle.size = (2 + Math.random() * 2) * scale;
+                particle.size = (0.5 + Math.random() * 1.5) * scale * 2.7;
                 particle.drip = false;
             }
 
@@ -694,7 +943,7 @@ class FireworksDisplay {
                 particle.color = { r: 255, g: 250, b: 230 }; // Bright white-gold
                 particle.life = 1.0;
                 particle.decay = 0.012;
-                particle.size = (1 + Math.random() * 2) * scale;
+                particle.size = (0.5 + Math.random() * 1.5) * scale * 2;
                 particle.gravity = 200 + Math.random() * 50;
                 particle.trail = [];
                 particle.drip = true;
@@ -710,7 +959,19 @@ class FireworksDisplay {
         let isCountryText = isCountry && rocket.countryName;
 
         if (word !== null) {
-            const textSize = this.getTextSize();
+            let textSize;
+
+            // If tier system is active and textScale is set, use fixed base size
+            if (rocket.textScale && window.tierSystem) {
+                // Fixed base size of 60px, scaled by tier
+                textSize = 60 * rocket.textScale;
+            } else {
+                // Fallback to old points-based sizing
+                textSize = this.getTextSize();
+                if (rocket.textScale) {
+                    textSize = textSize * rocket.textScale;
+                }
+            }
 
             const textParticle = this.getTextParticle();
             textParticle.x = rocket.x;
@@ -721,7 +982,13 @@ class FireworksDisplay {
             textParticle.color = rocket.color;
             textParticle.life = 1.0;
             textParticle.decay = 0.008;
-            textParticle.scale = 0.1; // Start small and grow
+
+            // Solana text starts larger and more visible
+            if (rocket.solanaGradient) {
+                textParticle.scale = 0.8; // Start much larger for immediate visibility
+            } else {
+                textParticle.scale = 0.1; // Start small and grow
+            }
 
             // Store flag colors for gradient rendering
             textParticle.isCountryText = isCountryText;
@@ -735,6 +1002,12 @@ class FireworksDisplay {
                 // Store layout and color stop information
                 textParticle.flagLayout = this.countryColors.layout || 'gradient';
                 textParticle.colorStops = this.countryColors.colorStops || null;
+            }
+
+            // Store Solana gradient info for special rendering
+            textParticle.isSolanaText = rocket.solanaGradient || false;
+            if (rocket.solanaGradient) {
+                textParticle.solanaColors = rocket.solanaColors;
             }
 
             this.textParticles.push(textParticle);
@@ -756,7 +1029,7 @@ class FireworksDisplay {
                     particle.color = { r: 255, g: 255, b: 255 };
                     particle.life = 1.0;
                     particle.decay = 0.02;
-                    particle.size = 1.5 * scale;
+                    particle.size = scale * 1.5;
                     particle.gravity = 100;
                     particle.trail = [];
                     particle.drip = false;
@@ -764,6 +1037,226 @@ class FireworksDisplay {
                     this.particles.push(particle);
                 }
             }, 200);
+        }
+    }
+
+    createMegaCrownExplosion(rocket) {
+        // TRULY MASSIVE explosion with multiple layers
+        const fireworkType = rocket.fireworkType;
+        const scale = fireworkType.scale || 12.0;
+        const particleCount = fireworkType.particleCount || 2000;
+
+        // Screen shake effect
+        const shakeIntensity = 15;
+        const shakeEl = document.body;
+        shakeEl.style.animation = 'none';
+        requestAnimationFrame(() => {
+            shakeEl.style.animation = `screenShake 0.5s cubic-bezier(.36,.07,.19,.97) both`;
+        });
+
+        // Fire background flash effect
+        createFireBackgroundFlash();
+
+        // Layer 1: Massive outer ring - slowest, longest lasting
+        for (let i = 0; i < particleCount * 0.4; i++) {
+            const angle = (Math.PI * 2 * i) / (particleCount * 0.4);
+            const speed = (300 + Math.random() * 200) * scale;
+
+            const particle = this.getParticle();
+            particle.x = rocket.x;
+            particle.y = rocket.y;
+            particle.vx = Math.cos(angle) * speed;
+            particle.vy = Math.sin(angle) * speed;
+            particle.color = { r: 255, g: 215, b: 0 }; // Pure gold
+            particle.life = 1.0;
+            particle.decay = 0.0003; // EXTREMELY slow fade - lasts forever
+            particle.size = (4 + Math.random() * 6) * scale * 0.3;
+            particle.gravity = 15 + Math.random() * 10; // Super low gravity
+            particle.trail = [];
+            particle.drip = true;
+
+            this.particles.push(particle);
+        }
+
+        // Layer 2: Mid ring - faster, golden sparkles
+        for (let i = 0; i < particleCount * 0.3; i++) {
+            const angle = (Math.PI * 2 * i) / (particleCount * 0.3);
+            const speed = (250 + Math.random() * 150) * scale;
+
+            const particle = this.getParticle();
+            particle.x = rocket.x;
+            particle.y = rocket.y;
+            particle.vx = Math.cos(angle) * speed;
+            particle.vy = Math.sin(angle) * speed;
+            particle.color = { r: 255, g: 250, b: 240 }; // Cream white
+            particle.life = 1.0;
+            particle.decay = 0.0004; // Ultra slow
+            particle.size = (3 + Math.random() * 5) * scale * 0.3;
+            particle.gravity = 20 + Math.random() * 15;
+            particle.trail = [];
+            particle.drip = true;
+
+            this.particles.push(particle);
+        }
+
+        // Layer 3: Inner burst - random, chaotic, bright
+        for (let i = 0; i < particleCount * 0.3; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const speed = (150 + Math.random() * 250) * scale;
+
+            const particle = this.getParticle();
+            particle.x = rocket.x;
+            particle.y = rocket.y;
+            particle.vx = Math.cos(angle) * speed;
+            particle.vy = Math.sin(angle) * speed;
+
+            // Mix of gold and orange
+            const colorChoice = Math.random();
+            if (colorChoice < 0.5) {
+                particle.color = { r: 255, g: 215, b: 0 };
+            } else {
+                particle.color = { r: 255, g: 140, b: 0 };
+            }
+
+            particle.life = 1.0;
+            particle.decay = 0.0005; // Ultra slow
+            particle.size = (2 + Math.random() * 4) * scale * 0.3;
+            particle.gravity = 25 + Math.random() * 20;
+            particle.trail = [];
+            particle.drip = true;
+
+            this.particles.push(particle);
+        }
+
+        // Shockwave rings - expanding circles
+        for (let ring = 0; ring < 3; ring++) {
+            setTimeout(() => {
+                const ringParticles = 150;
+                const ringRadius = 50 + (ring * 100);
+                for (let i = 0; i < ringParticles; i++) {
+                    const angle = (Math.PI * 2 * i) / ringParticles;
+
+                    const particle = this.getParticle();
+                    particle.x = rocket.x + Math.cos(angle) * ringRadius;
+                    particle.y = rocket.y + Math.sin(angle) * ringRadius;
+                    particle.vx = Math.cos(angle) * (400 + ring * 100) * scale * 0.5;
+                    particle.vy = Math.sin(angle) * (400 + ring * 100) * scale * 0.5;
+                    particle.color = { r: 255, g: 255, b: 100 }; // Bright yellow
+                    particle.life = 1.0;
+                    particle.decay = 0.015;
+                    particle.size = (2 + Math.random() * 3) * scale * 0.2;
+                    particle.gravity = 20;
+                    particle.trail = [];
+                    particle.drip = false;
+
+                    this.particles.push(particle);
+                }
+            }, ring * 100);
+        }
+
+        // Check if we have a custom message (not just crown emoji)
+        const hasCustomMessage = fireworkType.text && fireworkType.text !== '👑' && fireworkType.text.trim().length > 0;
+
+        if (hasCustomMessage) {
+            // Create TWO text particles positioned as a single centered unit
+            // Like a div: crown at top, text flowing below
+
+            // First, prepare the message and calculate its size
+            const messageText = fireworkType.text;
+
+            // Split long text into multiple lines
+            const maxCharsPerLine = 20;
+            let processedText = messageText;
+            let lineCount = 1;
+
+            if (messageText.length > maxCharsPerLine) {
+                const words = messageText.split(' ');
+                const lines = [];
+                let currentLine = '';
+
+                for (const word of words) {
+                    if ((currentLine + ' ' + word).length <= maxCharsPerLine) {
+                        currentLine += (currentLine ? ' ' : '') + word;
+                    } else {
+                        if (currentLine) lines.push(currentLine);
+                        currentLine = word;
+                    }
+                }
+                if (currentLine) lines.push(currentLine);
+
+                processedText = lines.join('\n');
+                lineCount = lines.length;
+            }
+
+            // Calculate message size based on text length
+            const textLength = processedText.replace(/\n/g, '').length;
+            let messageSize;
+            if (textLength > 30) {
+                messageSize = Math.max(60, 200 - (textLength * 2));
+            } else if (textLength > 15) {
+                messageSize = 100;
+            } else if (textLength > 5) {
+                messageSize = 150;
+            } else {
+                messageSize = 200;
+            }
+
+            // Crown size (larger and more prominent)
+            const crownSize = 250;
+
+            // Calculate total height of the "div" (crown + gap + message)
+            const crownHeight = crownSize * 1.0; // Crown takes up its full size
+            const gapBetween = 40; // Small gap between crown and message
+            const messageLineHeight = messageSize * 1.0 * 1.2; // Line height for message
+            const messageTotalHeight = messageLineHeight * lineCount;
+            const totalDivHeight = crownHeight + gapBetween + messageTotalHeight;
+
+            // Position the "div" so it's centered on the explosion point
+            const divTopY = rocket.y - (totalDivHeight / 2);
+
+            // 1. Crown emoji at the TOP of the div
+            const crownParticle = this.getTextParticle();
+            crownParticle.x = rocket.x;
+            crownParticle.y = divTopY + (crownHeight / 2); // Center crown in its space
+            crownParticle.vy = -30 * scale * 0.1; // Float upward slowly
+            crownParticle.text = '👑';
+            crownParticle.size = crownSize;
+            crownParticle.color = { r: 255, g: 215, b: 0 };
+            crownParticle.life = 1.0;
+            crownParticle.decay = 0.0012;
+            crownParticle.scale = 1.0;
+            crownParticle.isGiantText = true;
+            this.textParticles.push(crownParticle);
+
+            // 2. Custom message BELOW the crown (starts after crown + gap)
+            const messageParticle = this.getTextParticle();
+            messageParticle.x = rocket.x;
+            messageParticle.y = divTopY + crownHeight + gapBetween + (messageTotalHeight / 2);
+            messageParticle.vy = -30 * scale * 0.1; // Float upward slowly (same as crown)
+            messageParticle.text = processedText;
+            messageParticle.isMultiLine = lineCount > 1;
+            messageParticle.size = messageSize;
+            messageParticle.color = { r: 255, g: 215, b: 0 };
+            messageParticle.life = 1.0;
+            messageParticle.decay = 0.0012;
+            messageParticle.scale = 1.0;
+            messageParticle.isGiantText = true;
+            this.textParticles.push(messageParticle);
+
+        } else {
+            // No custom message - just show crown emoji centered on explosion
+            const textParticle = this.getTextParticle();
+            textParticle.x = rocket.x;
+            textParticle.y = rocket.y; // Center on explosion
+            textParticle.vy = -30 * scale * 0.1; // Float upward slowly
+            textParticle.text = '👑';
+            textParticle.size = 250; // Large crown
+            textParticle.color = { r: 255, g: 215, b: 0 };
+            textParticle.life = 1.0;
+            textParticle.decay = 0.0012;
+            textParticle.scale = 1.0;
+            textParticle.isGiantText = true;
+            this.textParticles.push(textParticle);
         }
     }
 
@@ -795,6 +1288,12 @@ class FireworksDisplay {
         // Update particles
         for (let i = this.particles.length - 1; i >= 0; i--) {
             const particle = this.particles[i];
+
+            // Flare particles just fade with minimal velocity damping
+            if (particle.isFlare) {
+                particle.vx *= 0.95; // Slight damping
+                particle.vy *= 0.95;
+            }
 
             particle.vy += particle.gravity * deltaTime;
             particle.x += particle.vx * deltaTime;
@@ -965,9 +1464,44 @@ class FireworksDisplay {
             this.ctx.textAlign = 'center';
             this.ctx.textBaseline = 'middle';
 
-            // For country text, use white text with colored glow from first flag color
-            if (text.isCountryText && text.flagColors) {
-                // Use first flag color for the glow/stroke
+            // For Solana text, use gradient fill with Solana brand colors
+            if (text.isSolanaText && text.solanaColors) {
+                // Create horizontal gradient across text (left to right: magenta -> blue -> cyan)
+                const textMetrics = this.ctx.measureText(text.text);
+                const textWidth = textMetrics.width;
+                const gradient = this.ctx.createLinearGradient(
+                    text.x - textWidth / 2,
+                    text.y,
+                    text.x + textWidth / 2,
+                    text.y
+                );
+
+                // Apply Solana gradient: magenta (0) -> blue (0.5) -> cyan (1)
+                gradient.addColorStop(0, `rgb(${text.solanaColors[0].r}, ${text.solanaColors[0].g}, ${text.solanaColors[0].b})`);
+                gradient.addColorStop(0.5, `rgb(${text.solanaColors[1].r}, ${text.solanaColors[1].g}, ${text.solanaColors[1].b})`);
+                gradient.addColorStop(1, `rgb(${text.solanaColors[2].r}, ${text.solanaColors[2].g}, ${text.solanaColors[2].b})`);
+
+                // Subtle white outline for readability (not overpowering)
+                this.ctx.strokeStyle = '#ffffff';
+                this.ctx.lineWidth = Math.max(3, text.size * text.scale * 0.08);
+                this.ctx.shadowBlur = 20;
+                this.ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
+                this.ctx.strokeText(text.text, text.x, text.y);
+
+                // Main gradient stroke with Solana colors
+                this.ctx.strokeStyle = gradient;
+                this.ctx.lineWidth = Math.max(2, text.size * text.scale * 0.05);
+                this.ctx.shadowBlur = 30;
+                this.ctx.shadowColor = `rgb(${text.solanaColors[0].r}, ${text.solanaColors[0].g}, ${text.solanaColors[0].b})`;
+                this.ctx.strokeText(text.text, text.x, text.y);
+
+                // Fill with vibrant gradient
+                this.ctx.fillStyle = gradient;
+                this.ctx.shadowBlur = 25;
+                this.ctx.shadowColor = `rgb(${text.solanaColors[1].r}, ${text.solanaColors[1].g}, ${text.solanaColors[1].b})`;
+                this.ctx.fillText(text.text, text.x, text.y);
+            } else if (text.isCountryText && text.flagColors) {
+                // For country text, use white text with colored glow from first flag color
                 const glowColor = text.flagColors[0];
 
                 // Stroke (outline) with flag color
@@ -984,17 +1518,42 @@ class FireworksDisplay {
                 this.ctx.fillText(text.text, text.x, text.y);
             } else {
                 // Standard text rendering for non-country fireworks
-                // Stroke (outline)
-                this.ctx.strokeStyle = `rgb(${text.color.r}, ${text.color.g}, ${text.color.b})`;
-                this.ctx.lineWidth = Math.max(2, text.size * text.scale * 0.05);
-                this.ctx.shadowBlur = 20;
-                this.ctx.shadowColor = `rgb(${text.color.r}, ${text.color.g}, ${text.color.b})`;
-                this.ctx.strokeText(text.text, text.x, text.y);
+                // Check if multi-line text (contains newlines)
+                if (text.isMultiLine && text.text.includes('\n')) {
+                    const lines = text.text.split('\n');
+                    const lineHeight = text.size * text.scale * 1.2; // 1.2x line spacing
+                    const totalHeight = lineHeight * (lines.length - 1);
+                    const startY = text.y - (totalHeight / 2); // Center vertically
 
-                // Fill
-                this.ctx.fillStyle = '#ffffff';
-                this.ctx.shadowBlur = 30;
-                this.ctx.fillText(text.text, text.x, text.y);
+                    lines.forEach((line, index) => {
+                        const lineY = startY + (index * lineHeight);
+
+                        // Stroke (outline)
+                        this.ctx.strokeStyle = `rgb(${text.color.r}, ${text.color.g}, ${text.color.b})`;
+                        this.ctx.lineWidth = Math.max(2, text.size * text.scale * 0.05);
+                        this.ctx.shadowBlur = 20;
+                        this.ctx.shadowColor = `rgb(${text.color.r}, ${text.color.g}, ${text.color.b})`;
+                        this.ctx.strokeText(line, text.x, lineY);
+
+                        // Fill
+                        this.ctx.fillStyle = '#ffffff';
+                        this.ctx.shadowBlur = 30;
+                        this.ctx.fillText(line, text.x, lineY);
+                    });
+                } else {
+                    // Single line text
+                    // Stroke (outline)
+                    this.ctx.strokeStyle = `rgb(${text.color.r}, ${text.color.g}, ${text.color.b})`;
+                    this.ctx.lineWidth = Math.max(2, text.size * text.scale * 0.05);
+                    this.ctx.shadowBlur = 20;
+                    this.ctx.shadowColor = `rgb(${text.color.r}, ${text.color.g}, ${text.color.b})`;
+                    this.ctx.strokeText(text.text, text.x, text.y);
+
+                    // Fill
+                    this.ctx.fillStyle = '#ffffff';
+                    this.ctx.shadowBlur = 30;
+                    this.ctx.fillText(text.text, text.x, text.y);
+                }
             }
 
             this.ctx.restore();
@@ -1087,6 +1646,7 @@ class FireworksDisplay {
                 }
             }
         }
+
     }
 
     startAnimation() {
@@ -1122,12 +1682,17 @@ window.addEventListener('load', () => {
 
 // M key to toggle menu, S key to toggle wallet panel
 document.addEventListener('keydown', (e) => {
-    if (e.key === 'm' || e.key === 'M') {
+    // Don't trigger shortcuts when typing in input fields
+    const isTyping = document.activeElement.tagName === 'INPUT' ||
+                     document.activeElement.tagName === 'TEXTAREA';
+
+    if ((e.key === 'm' || e.key === 'M') && !isTyping) {
         toggleMenu();
     }
 
-    if (e.key === 's' || e.key === 'S') {
-        toggleWalletPanel();
+    if ((e.key === 's' || e.key === 'S') && !isTyping) {
+        // S key now launches rank rocket instead of opening wallet panel
+        launchRankRocket();
     }
 
     // Enter key in input to add word
@@ -1136,9 +1701,126 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
+// Launch a special rank rocket that shows user's position
+function launchRankRocket() {
+    if (!window.fireworks || !window.fireworks.started) return;
+
+    // Check if wallet is connected
+    if (typeof phantomWallet !== 'undefined') {
+        const walletStatus = phantomWallet.getStatus();
+
+        if (walletStatus.connected && window.walletRankSystem) {
+            // Get user's rank
+            const rank = window.walletRankSystem.getRank(walletStatus.publicKey);
+
+            if (rank) {
+                // Launch rank rocket in center of screen
+                const centerX = window.innerWidth / 2;
+                window.fireworks.launchRankRocket(centerX, rank);
+                showNotification(`You are holder #${rank}! 🏆`, 'success');
+            } else {
+                showNotification('Rank not found. Try reconnecting your wallet.', 'error');
+            }
+        } else {
+            showNotification('Connect your wallet to see your rank!', 'info');
+        }
+    } else {
+        showNotification('Wallet integration not available', 'error');
+    }
+}
+
 function startFireworks() {
     document.getElementById('startScreen').classList.add('hidden');
-    window.fireworks.started = true;
+
+    // Show controls guide overlay with proper animation
+    const controlsGuide = document.getElementById('controlsGuide');
+    if (controlsGuide) {
+        // Use requestAnimationFrame to ensure proper rendering
+        requestAnimationFrame(() => {
+            controlsGuide.classList.add('show');
+        });
+
+        // Hide controls guide and START THE SHOW (don't show wallet guide yet)
+        const hideControlsGuide = function(e) {
+            if (e.target === controlsGuide) {
+                controlsGuide.classList.remove('show');
+                controlsGuide.removeEventListener('click', hideControlsGuide);
+
+                // Start fireworks immediately - wallet guide will show after first free rocket
+                window.fireworks.started = true;
+            }
+        };
+        controlsGuide.addEventListener('click', hideControlsGuide);
+    } else {
+        // Fallback if guide doesn't exist
+        window.fireworks.started = true;
+    }
+}
+
+function showWalletGuide() {
+    const walletGuide = document.getElementById('walletGuide');
+    if (walletGuide) {
+        requestAnimationFrame(() => {
+            walletGuide.classList.add('show');
+        });
+
+        // Hide wallet guide when clicking outside - allow watching show without connecting
+        const hideWalletGuide = function(e) {
+            if (e.target === walletGuide) {
+                walletGuide.classList.remove('show');
+                // User can continue watching the show even without connecting
+                window.fireworks.started = true;
+                walletGuide.removeEventListener('click', hideWalletGuide);
+
+                showNotification('You can watch the show, but need tokens to launch rockets!', 'info');
+            }
+        };
+        walletGuide.addEventListener('click', hideWalletGuide);
+    } else {
+        window.fireworks.started = true;
+    }
+}
+
+// Close wallet guide via X button
+function closeWalletGuide() {
+    const walletGuide = document.getElementById('walletGuide');
+    if (walletGuide) {
+        walletGuide.classList.remove('show');
+        window.fireworks.started = true;
+        showNotification('Watching the show! Press M to connect later.', 'info');
+    }
+}
+
+function shareWithFriend() {
+    const shareData = {
+        title: 'Solana New Year 2025',
+        text: 'Join me in the premium New Year celebration with custom fireworks messages! 🎆🪙',
+        url: window.location.href
+    };
+
+    if (navigator.share) {
+        navigator.share(shareData).catch(() => {
+            fallbackShare();
+        });
+    } else {
+        fallbackShare();
+    }
+}
+
+function fallbackShare() {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(() => {
+        const btn = event.target.closest('.share-btn');
+        if (btn) {
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span>✅ Link Copied!</span>';
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+            }, 2000);
+        }
+    }).catch(() => {
+        alert('Share this link: ' + url);
+    });
 }
 
 function toggleMenu() {
@@ -1149,6 +1831,185 @@ function toggleMenu() {
 function toggleWalletPanel() {
     const walletPanel = document.getElementById('walletPanel');
     walletPanel.classList.toggle('hidden');
+}
+
+async function connectPhantomWallet() {
+    const walletGuide = document.getElementById('walletGuide');
+
+    try {
+        // Hide the onboarding guide
+        if (walletGuide) {
+            walletGuide.classList.remove('show');
+        }
+
+        // Connect wallet using the PhantomWalletIntegration class
+        if (window.phantomWallet) {
+            const result = await window.phantomWallet.connect();
+            console.log('Wallet connected:', result);
+
+            // Register wallet in rank system
+            if (window.walletRankSystem) {
+                const rank = await window.walletRankSystem.registerWallet(result.publicKey, result.tokenBalance);
+                showNotification(`Welcome! You are holder #${rank} 🎉`, 'success');
+            }
+
+            // Start the fireworks
+            window.fireworks.started = true;
+
+            // Show success notification
+            showNotification(`Connected! ${result.availableRockets} rockets available`, 'success');
+        } else {
+            throw new Error('Phantom integration not loaded');
+        }
+    } catch (error) {
+        console.error('Failed to connect wallet:', error);
+
+        // Still allow them to continue without wallet
+        if (walletGuide) {
+            walletGuide.classList.remove('show');
+        }
+        window.fireworks.started = true;
+
+        showNotification('Wallet connection failed. Limited features available.', 'error');
+    }
+}
+
+// Global flag to prevent re-triggering modal
+window.connectPromptShowing = false;
+
+// Show token requirement message when trying to launch without tokens
+function showTokenRequirementMessage() {
+    // Don't show if already visible
+    if (window.connectPromptShowing) {
+        return;
+    }
+    // Immediately show connect prompt (no intermediate notification)
+    showConnectPrompt();
+}
+
+// Show a connect button notification
+function showConnectPrompt() {
+    // Don't show if already visible
+    if (window.connectPromptShowing) {
+        return;
+    }
+
+    // Set flag to prevent re-triggering
+    window.connectPromptShowing = true;
+
+    // Remove any existing prompts first to avoid duplicates
+    const existingPrompts = document.querySelectorAll('.connect-prompt');
+    existingPrompts.forEach(p => p.remove());
+
+    // Create a custom notification with a connect button
+    const notification = document.createElement('div');
+    notification.className = 'notification connect-prompt';
+
+    const content = document.createElement('div');
+    content.className = 'connect-prompt-content';
+
+    const text = document.createElement('p');
+    text.textContent = 'Connect your Phantom wallet to launch more rockets!';
+
+    const connectBtn = document.createElement('button');
+    connectBtn.className = 'connect-btn-inline';
+    connectBtn.textContent = 'Connect Wallet';
+    connectBtn.onclick = function(e) {
+        e.stopPropagation();
+        e.preventDefault();
+        openWalletGuide();
+    };
+
+    const skipBtn = document.createElement('button');
+    skipBtn.className = 'skip-btn-inline';
+    skipBtn.textContent = 'Watch Only';
+    skipBtn.onclick = function(e) {
+        e.stopPropagation();
+        e.preventDefault();
+        dismissConnectPrompt();
+    };
+
+    content.appendChild(text);
+    content.appendChild(connectBtn);
+    content.appendChild(skipBtn);
+
+    // Stop propagation on the content div too
+    content.onclick = function(e) {
+        e.stopPropagation();
+    };
+
+    notification.appendChild(content);
+
+    notification.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: linear-gradient(135deg, rgba(0, 29, 61, 0.98) 0%, rgba(0, 20, 45, 0.98) 100%);
+        border: 3px solid rgba(138, 43, 226, 0.6);
+        border-radius: 20px;
+        padding: 40px;
+        z-index: 10000;
+        box-shadow: 0 25px 100px rgba(0, 0, 0, 0.7), 0 0 80px rgba(138, 43, 226, 0.5);
+        min-width: 400px;
+        text-align: center;
+        pointer-events: all;
+    `;
+
+    // Stop clicks on the notification from propagating
+    notification.onclick = function(e) {
+        e.stopPropagation();
+    };
+
+    document.body.appendChild(notification);
+
+    // Auto-remove after 10 seconds if no action
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+            // Clear the flag when auto-removed
+            window.connectPromptShowing = false;
+        }
+    }, 10000);
+}
+
+// Open wallet guide from connect button (make it global for debugging)
+window.openWalletGuide = function() {
+    console.log('openWalletGuide called');
+
+    // Clear the flag
+    window.connectPromptShowing = false;
+
+    // Remove connect prompt
+    const prompts = document.querySelectorAll('.connect-prompt');
+    console.log('Removing', prompts.length, 'prompts');
+    prompts.forEach(p => p.remove());
+
+    // Show wallet guide
+    const walletGuide = document.getElementById('walletGuide');
+    console.log('walletGuide element:', walletGuide);
+
+    if (walletGuide) {
+        requestAnimationFrame(() => {
+            walletGuide.classList.add('show');
+            console.log('Wallet guide shown');
+        });
+    } else {
+        console.error('Wallet guide element not found!');
+    }
+};
+
+// Also keep it accessible as openWalletGuide for the onclick handlers
+const openWalletGuide = window.openWalletGuide;
+
+// Dismiss connect prompt
+function dismissConnectPrompt() {
+    // Clear the flag
+    window.connectPromptShowing = false;
+
+    const prompts = document.querySelectorAll('.connect-prompt');
+    prompts.forEach(p => p.remove());
+    showNotification('Watching the show! Press M to connect later.', 'info');
 }
 
 // Make renderWordList globally accessible for sync
@@ -1287,3 +2148,990 @@ class CustomCursor {
 window.addEventListener('load', () => {
     new CustomCursor();
 });
+
+// ====== CROWN CANNON SYSTEM ======
+
+// Cannon state
+let cannonAngle = 0;
+let mouseCannonX = window.innerWidth / 2;
+let mouseCannonY = window.innerHeight / 2;
+
+// Check if user is rank #1 (King of the Hill)
+function isKingOfTheHill() {
+    const tierInfo = window.tierSystem?.getUserTier();
+    return tierInfo && tierInfo.rank === 1;
+}
+
+// Initialize cannon mouse tracking
+function initCannonTracking() {
+    const cannon = document.getElementById('crownCannon');
+    if (!cannon) {
+        console.error('Crown cannon element not found!');
+        return;
+    }
+
+    console.log('Cannon tracking initialized');
+
+    // Track mouse movement globally (always update coordinates)
+    document.addEventListener('mousemove', (e) => {
+        // Always update mouse position
+        mouseCannonX = e.clientX;
+        mouseCannonY = e.clientY;
+
+        // Only move cannon visually if user is king
+        if (!isKingOfTheHill()) return;
+
+        // Slide cannon horizontally to follow mouse
+        // Keep it centered on mouse X position
+        const cannonWidth = 80; // Approximate cannon width
+        const leftPosition = mouseCannonX - (cannonWidth / 2);
+
+        // Constrain to screen bounds
+        const maxLeft = window.innerWidth - cannonWidth;
+        const constrainedLeft = Math.max(0, Math.min(maxLeft, leftPosition));
+
+        cannon.style.left = constrainedLeft + 'px';
+        cannon.style.transform = 'none'; // Remove the center transform
+    });
+
+    // Spacebar to fire BIG CANNON ROCKET (king only)
+    document.addEventListener('keydown', (e) => {
+        if (e.code !== 'Space') return; // Only spacebar
+
+        const isKing = isKingOfTheHill();
+        if (!isKing) return;
+
+        // Don't fire if user is typing in an input field or textarea
+        const activeElement = document.activeElement;
+        const isTyping = activeElement && (
+            activeElement.tagName === 'INPUT' ||
+            activeElement.tagName === 'TEXTAREA' ||
+            activeElement.isContentEditable
+        );
+
+        if (isTyping) {
+            console.log('Spacebar ignored - user is typing in input field');
+            return; // Allow normal space character in input
+        }
+
+        // Prevent page scroll on spacebar
+        e.preventDefault();
+
+        console.log('Spacebar pressed - King firing cannon');
+
+        if (!window.fireworks) {
+            console.error('King spacebar: fireworks not initialized');
+            showNotification('Fireworks not initialized', 'error');
+            return;
+        }
+
+        if (!window.fireworks.started) {
+            console.warn('King spacebar: show not started');
+            showNotification('Start the show first!', 'info');
+            return;
+        }
+
+        if (!bigShotReady) {
+            console.log('King spacebar: big shot on cooldown');
+            return;
+        }
+
+        // Get message from input
+        const messageInput = document.getElementById('cannonMessageText');
+        const message = messageInput?.value.trim() || '';
+
+        console.log('✅ King firing big cannon rocket at', mouseCannonX, mouseCannonY, 'with message:', message);
+
+        // Scale mouse coordinates to canvas size
+        const canvasScale = window.fireworks?.canvasScale || 2.5;
+        const scaledX = mouseCannonX * canvasScale;
+        const scaledY = mouseCannonY * canvasScale;
+
+        console.log('Scaled coordinates:', scaledX, scaledY);
+
+        // Fire big queued rocket with message
+        fireBigQueuedRocket(scaledX, scaledY, message);
+
+        // Don't clear the input - keep the message saved for next shot
+        // User can manually edit it if they want to change it
+    });
+
+    // Right-click to toggle fire flare cursor trail
+    let fireFlareActive = false;
+    document.addEventListener('contextmenu', (e) => {
+        if (!isKingOfTheHill()) return;
+
+        e.preventDefault(); // Prevent context menu
+
+        // Toggle fire flare
+        fireFlareActive = !fireFlareActive;
+        if (fireFlareActive) {
+            showNotification('Fire Flare: ON', 'success');
+            startFireFlare();
+        } else {
+            showNotification('Fire Flare: OFF', 'info');
+            stopFireFlare();
+        }
+    });
+}
+
+// Big shot cooldown and queue system
+let bigShotReady = true;
+let bigShotCooldownTimer = null;
+let bigShotCooldownEndTime = 0;
+
+// Regular shot cooldown system (4 seconds for everyone)
+let regularShotReady = true;
+let regularShotCooldownEndTime = 0;
+const REGULAR_SHOT_COOLDOWN = 4000; // 4 seconds
+
+// Top 15 rapid rocket cooldown system (5 seconds for ranks 2-15)
+let top15RocketReady = true;
+let top15RocketCooldownEndTime = 0;
+const TOP15_ROCKET_COOLDOWN = 5000; // 5 seconds
+
+// Fire BIG queued rocket (aims where you click)
+function fireBigQueuedRocket(targetX, targetY, message = '') {
+    console.log('🚀 fireBigQueuedRocket called with:', targetX, targetY, 'message:', message);
+
+    if (!window.fireworks || !window.fireworks.started) {
+        console.error('Fireworks not ready:', { fireworks: !!window.fireworks, started: window.fireworks?.started });
+        showNotification('Start the show first!', 'info');
+        return;
+    }
+
+    // Check if big shot is ready
+    if (!bigShotReady) {
+        console.log('Big shot on cooldown');
+        return;
+    }
+
+    console.log('✅ Launching big rocket!');
+
+    // Start cooldown (30 seconds)
+    bigShotReady = false;
+    bigShotCooldownEndTime = Date.now() + 30000;
+    startBigShotCooldown();
+
+    // Launch big firework aimed at mouse position
+    if (window.fireworks) {
+        // Big golden explosion
+        const bigColors = {
+            gold: { r: 255, g: 215, b: 0 },
+            orange: { r: 255, g: 140, b: 0 }
+        };
+
+        // Get canvas dimensions
+        const canvasWidth = window.fireworks.canvas.width;
+        const canvasHeight = window.fireworks.canvas.height;
+
+        // Aim at mouse Y position (already scaled)
+        const aimY = targetY;
+        const heightDiff = canvasHeight - aimY;
+        const heightRatio = heightDiff / canvasHeight;
+
+        const horizontalDrift = (targetX - canvasWidth / 2) * 0.5;
+        const baseVelocity = 400 + (heightRatio * 2000);
+        const verticalVelocity = -(baseVelocity);
+
+        // Use custom message if provided, otherwise use crown emoji
+        const displayText = message || '👑';
+
+        const rocket = {
+            x: canvasWidth / 2, // Launch from center of canvas
+            y: canvasHeight,
+            vx: horizontalDrift * 0.3,
+            vy: verticalVelocity,
+            targetY: aimY,
+            exploded: false,
+            trail: [],
+            maxTrailLength: 80,
+            trailHue: 50,
+            isBigShot: true,
+            selectedWord: displayText, // Custom message for cannon shot
+            fireworkType: {
+                type: 'big-crown',
+                colors: bigColors,
+                particleCount: 800, // Big but not mega
+                scale: 6.0, // Large scale
+                text: displayText, // Use custom message
+                layered: true,
+                shockwave: true
+            }
+        };
+
+        window.fireworks.rockets.push(rocket);
+
+        // Broadcast big shot
+        if (window.fireworkSync && window.fireworkSync.isConnected) {
+            window.fireworkSync.broadcastFirework(
+                window.innerWidth / 2,
+                window.innerHeight,
+                aimY,
+                rocket.fireworkType,
+                6.0,
+                '👑',
+                true
+            );
+        }
+    }
+}
+
+// Fire Flare System - Small meteor with trail following mouse
+let fireFlareInterval = null;
+let fireFlareParticles = [];
+
+function startFireFlare() {
+    if (fireFlareInterval) return; // Already running
+
+    fireFlareInterval = setInterval(() => {
+        if (!window.fireworks || !isKingOfTheHill()) {
+            stopFireFlare();
+            return;
+        }
+
+        // Get scaled mouse position for canvas
+        const scaledX = mouseCannonX * (window.fireworks.canvasScale || 2.5);
+        const scaledY = mouseCannonY * (window.fireworks.canvasScale || 2.5);
+
+        // Create small trail particles behind the cursor (meteor effect)
+        for (let i = 0; i < 2; i++) {
+            const particle = window.fireworks.getParticle();
+
+            // Spawn particles directly at mouse with small random offset
+            particle.x = scaledX + (Math.random() - 0.5) * 10;
+            particle.y = scaledY + (Math.random() - 0.5) * 10;
+
+            // Very small initial velocity for tight trail
+            particle.vx = (Math.random() - 0.5) * 20;
+            particle.vy = (Math.random() - 0.5) * 20;
+
+            // Solana gradient colors - magenta, purple, cyan
+            const colorChoice = Math.random();
+            if (colorChoice < 0.33) {
+                particle.color = { r: 220, g: 31, b: 255 }; // Magenta
+            } else if (colorChoice < 0.66) {
+                particle.color = { r: 156, g: 39, b: 176 }; // Purple
+            } else {
+                particle.color = { r: 0, g: 255, b: 255 }; // Cyan
+            }
+
+            particle.life = 1.0;
+            particle.decay = 0.04; // Quick fade for short trail
+            particle.size = 2 + Math.random() * 3; // Small particles
+            particle.gravity = 0; // No gravity, just fade
+            particle.trail = [];
+            particle.drip = false;
+
+            // Mark as flare particle (no celestial gravity)
+            particle.isFlare = true;
+
+            window.fireworks.particles.push(particle);
+        }
+    }, 30); // Emit particles every 30ms for smooth trail
+}
+
+function stopFireFlare() {
+    if (fireFlareInterval) {
+        clearInterval(fireFlareInterval);
+        fireFlareInterval = null;
+    }
+}
+
+// Fire TINY rapid rocket - goes HIGH but is ABSOLUTELY TINY
+function fireTinyRapidRocket(targetX) {
+    if (window.fireworks) {
+        // TINY gold rocket that travels very high but is MICROSCOPIC
+        const crownColors = {
+            gold: { r: 255, g: 215, b: 0 },
+            orange: { r: 255, g: 165, b: 0 }
+        };
+
+        // Goes VERY HIGH (5-15% from top)
+        const targetY = window.innerHeight * (0.05 + Math.random() * 0.1); // 5-15% from top
+        const heightDiff = window.innerHeight - targetY;
+        const heightRatio = heightDiff / window.innerHeight;
+
+        const horizontalDrift = (targetX - window.innerWidth / 2) * 0.5;
+        const baseVelocity = 400 + (heightRatio * 2000);
+        const verticalVelocity = -(baseVelocity);
+
+        const rocket = {
+            x: window.innerWidth / 2, // Launch from center (cannon position)
+            y: window.innerHeight,
+            vx: horizontalDrift * 0.3,
+            vy: verticalVelocity,
+            targetY: targetY,
+            exploded: false,
+            trail: [],
+            maxTrailLength: 15,
+            trailHue: 45,
+            fireworkType: {
+                type: 'tiny-rapid',
+                colors: crownColors,
+                particleCount: 20,  // Very few particles
+                scale: 0.02,        // ABSOLUTELY TINY (2% scale!)
+                text: '👑',
+                textScale: 0.02     // MICROSCOPIC text
+            }
+        };
+
+        window.fireworks.rockets.push(rocket);
+
+        // Broadcast tiny rocket to other users
+        if (window.fireworkSync && window.fireworkSync.isConnected) {
+            window.fireworkSync.broadcastFirework(
+                window.innerWidth / 2,
+                window.innerHeight,
+                targetY,
+                rocket.fireworkType,
+                0.02,
+                '👑',
+                true  // isTopHolder = true for tiny rocket
+            );
+        }
+    }
+}
+
+// Start 30-second big shot cooldown (visual in circular UI only)
+function startBigShotCooldown() {
+    const cooldownDuration = 30000; // 30 seconds
+
+    // Set timer for 30 seconds
+    bigShotCooldownTimer = setTimeout(() => {
+        bigShotReady = true;
+    }, cooldownDuration);
+}
+
+// ============================================
+// TIER SYSTEM UI INTEGRATION
+// ============================================
+
+// Update tier display panel
+function updateTierDisplay() {
+    if (!window.tierSystem) return;
+
+    const tierInfo = window.tierSystem.getUserTier();
+    const tierPanel = document.getElementById('tierPanel');
+    const tierName = document.getElementById('tierName');
+    const tierRank = document.getElementById('tierRank');
+    const tierPercentile = document.getElementById('tierPercentile');
+    const tierFeatures = document.getElementById('tierFeatures');
+    const cannon = document.getElementById('crownCannon');
+
+    if (!tierPanel) return;
+
+    // Show/hide panel
+    if (tierInfo.name === 'Not Connected' || tierInfo.name === 'Locked') {
+        tierPanel.classList.add('hidden');
+        if (cannon) cannon.style.display = 'none';
+        return;
+    }
+
+    tierPanel.classList.remove('hidden');
+
+    // Show/hide cannon based on rank
+    const cannonMessageSection = document.getElementById('cannonMessageSection');
+    if (cannon) {
+        if (tierInfo.rank === 1) {
+            cannon.style.display = 'flex';
+            // Show cannon message input in menu
+            if (cannonMessageSection) {
+                cannonMessageSection.style.display = 'block';
+            }
+            // Update king's name on cannon
+            if (window.updateKingCannonName) {
+                window.updateKingCannonName();
+            }
+        } else {
+            cannon.style.display = 'none';
+            // Hide cannon message input
+            if (cannonMessageSection) {
+                cannonMessageSection.style.display = 'none';
+            }
+        }
+    }
+
+    // Update tier name with color
+    tierName.textContent = tierInfo.name;
+    tierName.style.color = window.tierSystem.getTierColor(tierInfo.name);
+
+    // Update rank only
+    if (tierInfo.rank) {
+        tierRank.textContent = `#${tierInfo.rank}`;
+    }
+
+    // Remove features display (keeping code structure but not populating)
+    if (false && tierInfo.features) {
+        let featuresHTML = '';
+
+        if (tierInfo.name === 'King of the Hill') {
+            featuresHTML = `
+                <div class="tier-feature-item">Massive Cannon</div>
+                <div class="tier-feature-item">Auto Mega Shot (60s)</div>
+                <div class="tier-feature-item">Right-Click Fireballs</div>
+                <div class="tier-feature-item">Golden Aura</div>
+                <div class="tier-feature-item">Crown Banner</div>
+            `;
+        } else if (tierInfo.name === 'Apex') {
+            featuresHTML = `
+                <div class="tier-feature-item">Whale Companions</div>
+                <div class="tier-feature-item">Glowing Text + Emoji</div>
+                <div class="tier-feature-item">Priority Rendering</div>
+                <div class="tier-feature-item">${tierInfo.particleCount} particles</div>
+            `;
+        } else if (tierInfo.name === 'Inferno') {
+            featuresHTML = `
+                <div class="tier-feature-item">Dolphin/Orb Trail</div>
+                <div class="tier-feature-item">Animated Text</div>
+                <div class="tier-feature-item">Cluster Burst</div>
+                <div class="tier-feature-item">3s Cooldown</div>
+            `;
+        } else if (tierInfo.name === 'Blaze') {
+            featuresHTML = `
+                <div class="tier-feature-item">Shooting Stars</div>
+                <div class="tier-feature-item">Multi-Stage Rocket</div>
+                <div class="tier-feature-item">5s Cooldown</div>
+            `;
+        } else if (tierInfo.name === 'Flame') {
+            featuresHTML = `
+                <div class="tier-feature-item">Trailing Sparks</div>
+                <div class="tier-feature-item">Bold Text</div>
+                <div class="tier-feature-item">10s Cooldown</div>
+            `;
+        } else {
+            featuresHTML = `
+                <div class="tier-feature-item">Basic Sparklers</div>
+                <div class="tier-feature-item">Unlimited Firing</div>
+            `;
+        }
+
+        tierFeatures.innerHTML = featuresHTML;
+    }
+}
+
+// Make it globally accessible
+window.updateTierDisplay = updateTierDisplay;
+
+// Cycle tier rank for testing
+function cycleTierUp() {
+    if (window.tierSystem) {
+        window.tierSystem.cycleTestRank(1);
+        showNotification(`Test Rank: #${window.tierSystem.testRank}`, 'info');
+    }
+}
+
+function cycleTierDown() {
+    if (window.tierSystem) {
+        window.tierSystem.cycleTestRank(-1);
+        showNotification(`Test Rank: #${window.tierSystem.testRank}`, 'info');
+    }
+}
+
+// Show/hide tier test controls
+function toggleTierTestControls(show) {
+    const controls = document.getElementById('tierTestControls');
+    if (controls) {
+        controls.style.display = show ? 'flex' : 'none';
+    }
+}
+
+// Separate tier test toggle function
+function toggleTierTest(enabled) {
+    // Show/hide tier testing controls
+    toggleTierTestControls(enabled);
+
+    // Enable/disable tier test mode
+    if (enabled && window.tierSystem) {
+        window.tierSystem.setTestRank(1, 100); // Start as #1 out of 100
+        updateTierDisplay();
+    } else if (window.tierSystem) {
+        window.tierSystem.disableTestMode();
+        updateTierDisplay();
+    }
+}
+
+// Make globally accessible
+window.toggleTierTest = toggleTierTest;
+
+// Keyboard shortcuts for tier testing
+document.addEventListener('keydown', (e) => {
+    // Only work when tier test mode is enabled
+    const tierTestCheckbox = document.getElementById('testTierCheckbox');
+    if (!tierTestCheckbox || !tierTestCheckbox.checked) return;
+
+    // Arrow keys to cycle rank
+    if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        cycleTierUp();
+    } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        cycleTierDown();
+    }
+    // Number keys for quick rank jumps
+    else if (e.key >= '1' && e.key <= '9' && e.ctrlKey) {
+        e.preventDefault();
+        const rank = parseInt(e.key);
+        if (window.tierSystem) {
+            window.tierSystem.setTestRank(rank, 100);
+            showNotification(`Test Rank: #${rank}`, 'info');
+        }
+    }
+});
+
+// ============================================
+// FIRE BACKGROUND ANIMATION FOR KING LAUNCH
+// ============================================
+
+function createFireBackgroundFlash() {
+    // Create fullscreen fire overlay
+    const fireOverlay = document.createElement('div');
+    fireOverlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 9998;
+        background: radial-gradient(ellipse at bottom,
+            rgba(255, 100, 0, 0.4) 0%,
+            rgba(255, 165, 0, 0.3) 20%,
+            rgba(255, 69, 0, 0.2) 40%,
+            transparent 70%);
+        animation: fireFlash 1.5s ease-out forwards;
+    `;
+
+    // Add CSS animation
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes fireFlash {
+            0% {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            20% {
+                opacity: 1;
+                transform: scale(1.1);
+            }
+            100% {
+                opacity: 0;
+                transform: scale(1.5);
+            }
+        }
+    `;
+    document.head.appendChild(style);
+
+    document.body.appendChild(fireOverlay);
+
+    // Remove after animation
+    setTimeout(() => {
+        fireOverlay.remove();
+    }, 1500);
+}
+
+// ============================================
+// TIER CONFIGURATION EDITOR
+// ============================================
+
+function toggleTierEditor() {
+    const panel = document.getElementById('tierEditorPanel');
+    if (!panel) return;
+
+    if (panel.classList.contains('hidden')) {
+        panel.classList.remove('hidden');
+        loadCurrentTierValues();
+    } else {
+        panel.classList.add('hidden');
+    }
+}
+
+function loadCurrentTierValues() {
+    if (!window.tierSystem || !window.tierSystem.tierConfig) return;
+
+    const tierInfo = window.tierSystem.getUserTier();
+    const rank = tierInfo.rank || 1;
+
+    const tierData = window.tierSystem.tierConfig.find(t => t.rank === rank);
+    if (!tierData) return;
+
+    document.getElementById('editorCurrentRank').textContent = rank;
+    document.getElementById('editorMaxHeight').value = tierData.maxHeight;
+    document.getElementById('editorMaxFontSize').value = tierData.maxFontSize;
+    document.getElementById('editorMaxRocketSize').value = tierData.maxRocketSize;
+
+    updateEditorValueDisplays();
+
+    // Update value displays when inputs change
+    document.getElementById('editorMaxHeight').oninput = updateEditorValueDisplays;
+    document.getElementById('editorMaxFontSize').oninput = updateEditorValueDisplays;
+    document.getElementById('editorMaxRocketSize').oninput = updateEditorValueDisplays;
+}
+
+function updateEditorValueDisplays() {
+    const height = document.getElementById('editorMaxHeight').value;
+    const fontSize = document.getElementById('editorMaxFontSize').value;
+    const rocketSize = document.getElementById('editorMaxRocketSize').value;
+
+    document.getElementById('editorMaxHeightValue').textContent = height;
+    document.getElementById('editorMaxFontSizeValue').textContent = fontSize;
+    document.getElementById('editorMaxRocketSizeValue').textContent = rocketSize;
+}
+
+function applyTierEdits() {
+    if (!window.tierSystem || !window.tierSystem.tierConfig) {
+        showNotification('Tier config not loaded yet', 'error');
+        return;
+    }
+
+    const tierInfo = window.tierSystem.getUserTier();
+    const rank = tierInfo.rank || 1;
+
+    const tierData = window.tierSystem.tierConfig.find(t => t.rank === rank);
+    if (!tierData) return;
+
+    // Update the config in memory
+    tierData.maxHeight = parseFloat(document.getElementById('editorMaxHeight').value);
+    tierData.maxFontSize = parseFloat(document.getElementById('editorMaxFontSize').value);
+    tierData.maxRocketSize = parseFloat(document.getElementById('editorMaxRocketSize').value);
+
+    showNotification(`Rank ${rank} updated! Use "Download Config" to save.`, 'success');
+
+    // Refresh the tier display
+    updateTierDisplay();
+}
+
+function downloadTierConfig() {
+    if (!window.tierSystem || !window.tierSystem.tierConfig) {
+        showNotification('No config to download', 'error');
+        return;
+    }
+
+    const config = {
+        tiers: window.tierSystem.tierConfig,
+        description: "Tier configuration for rocket fireworks. maxHeight: 0.0 (top of screen) to 1.0 (bottom), maxFontSize: text multiplier, maxRocketSize: explosion size multiplier"
+    };
+
+    const json = JSON.stringify(config, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'tier-config.json';
+    a.click();
+
+    URL.revokeObjectURL(url);
+    showNotification('Config downloaded! Replace the file to apply changes.', 'success');
+}
+
+// ====== USER NAME SYSTEM ======
+let userName = localStorage.getItem('userName') || 'Anonymous';
+
+function saveName() {
+    const nameInput = document.getElementById('userNameInput');
+    const newName = nameInput.value.trim();
+    
+    if (newName && newName.length > 0) {
+        userName = newName.substring(0, 20); // Max 20 chars
+        localStorage.setItem('userName', userName);
+        showNotification('Name saved: ' + userName, 'success');
+        
+        // Update king cannon name if user is king
+        updateKingCannonName();
+    } else {
+        showNotification('Please enter a valid name', 'info');
+    }
+}
+
+function updateKingCannonName() {
+    const cannonNameEl = document.getElementById('cannonName');
+    if (cannonNameEl && window.tierSystem) {
+        const tierInfo = window.tierSystem.getUserTier();
+        if (tierInfo && tierInfo.rank === 1) {
+            cannonNameEl.textContent = userName;
+        }
+    }
+}
+
+// Load saved name on page load
+window.addEventListener('load', () => {
+    const nameInput = document.getElementById('userNameInput');
+    if (nameInput) {
+        nameInput.value = userName;
+    }
+});
+
+// ====== COOLDOWN TIMER SYSTEM ======
+let cooldownInterval = null;
+
+function startCooldownTimer(durationMs) {
+    const cooldownDisplay = document.getElementById('cooldownDisplay');
+    const cooldownTimer = document.getElementById('cooldownTimer');
+    
+    if (!cooldownDisplay || !cooldownTimer) return;
+    
+    // Show cooldown display
+    cooldownDisplay.style.display = 'block';
+    
+    const endTime = Date.now() + durationMs;
+    
+    // Clear existing interval
+    if (cooldownInterval) {
+        clearInterval(cooldownInterval);
+    }
+    
+    // Update every 100ms for smooth countdown
+    cooldownInterval = setInterval(() => {
+        const remaining = endTime - Date.now();
+        
+        if (remaining <= 0) {
+            clearInterval(cooldownInterval);
+            cooldownInterval = null;
+            cooldownTimer.textContent = 'Ready!';
+            cooldownTimer.classList.add('ready');
+            
+            // Hide after a moment
+            setTimeout(() => {
+                if (cooldownDisplay) {
+                    cooldownDisplay.style.display = 'none';
+                }
+            }, 1000);
+        } else {
+            cooldownTimer.classList.remove('ready');
+            const seconds = (remaining / 1000).toFixed(1);
+            cooldownTimer.textContent = seconds + 's';
+        }
+    }, 100);
+}
+
+// ====== LEADERBOARD SYSTEM ======
+function updateLeaderboard() {
+    const leaderboardList = document.getElementById('leaderboardList');
+    const leaderboardPanel = document.getElementById('leaderboardPanel');
+    
+    if (!leaderboardList || !window.tierSystem) return;
+    
+    // Get all wallets sorted by balance
+    const wallets = Array.from(window.tierSystem.wallets.entries())
+        .map(([address, data]) => ({
+            address,
+            balance: data.balance,
+            holderNumber: data.holderNumber,
+            name: data.name || `Holder #${data.holderNumber}`
+        }))
+        .sort((a, b) => b.balance - a.balance)
+        .slice(0, 15); // Top 15
+    
+    if (wallets.length === 0) {
+        leaderboardList.innerHTML = '<div class="leaderboard-item loading">No holders yet</div>';
+        return;
+    }
+    
+    // Show leaderboard panel
+    if (leaderboardPanel) {
+        leaderboardPanel.classList.remove('hidden');
+    }
+    
+    // Build leaderboard HTML
+    leaderboardList.innerHTML = wallets.map((wallet, index) => {
+        const rank = index + 1;
+        const rankClass = rank === 1 ? 'rank-1' : '';
+        const displayName = wallet.name || userName || `Holder #${wallet.holderNumber}`;
+        const tokens = (wallet.balance / 1000000).toFixed(1) + 'M';
+        
+        return `
+            <div class="leaderboard-item ${rankClass}">
+                <span class="leaderboard-rank">#${rank}</span>
+                <span class="leaderboard-name">${displayName}</span>
+                <span class="leaderboard-tokens">${tokens}</span>
+            </div>
+        `;
+    }).join('');
+}
+
+// Update leaderboard periodically
+setInterval(() => {
+    if (window.tierSystem && window.fireworks && window.fireworks.started) {
+        updateLeaderboard();
+    }
+}, 5000); // Every 5 seconds
+
+// Character counter for cannon message
+function updateCannonCharCount() {
+    const input = document.getElementById('cannonMessageText');
+    const counter = document.getElementById('cannonCharCount');
+
+    if (input && counter) {
+        counter.textContent = input.value.length;
+    }
+}
+
+// Add event listener for character counter
+document.addEventListener('DOMContentLoaded', () => {
+    const cannonInput = document.getElementById('cannonMessageText');
+    if (cannonInput) {
+        cannonInput.addEventListener('input', updateCannonCharCount);
+    }
+});
+
+// ============================================
+// CIRCULAR COOLDOWN UI AROUND MOUSE CURSOR
+// ============================================
+
+// Track actual mouse position (viewport coordinates)
+let actualMouseX = window.innerWidth / 2;
+let actualMouseY = window.innerHeight / 2;
+
+// Update mouse position instantly
+document.addEventListener('mousemove', (e) => {
+    actualMouseX = e.clientX;
+    actualMouseY = e.clientY;
+});
+
+// Initialize cooldown canvas
+let cooldownCanvas = null;
+let cooldownCtx = null;
+
+function initCooldownCanvas() {
+    cooldownCanvas = document.getElementById('cooldownCanvas');
+    if (!cooldownCanvas) return;
+
+    cooldownCanvas.width = window.innerWidth;
+    cooldownCanvas.height = window.innerHeight;
+    cooldownCtx = cooldownCanvas.getContext('2d');
+
+    // Resize handler
+    window.addEventListener('resize', () => {
+        if (cooldownCanvas) {
+            cooldownCanvas.width = window.innerWidth;
+            cooldownCanvas.height = window.innerHeight;
+        }
+    });
+
+    // Start animation loop for cooldown circles
+    animateCooldownCircles();
+}
+
+function animateCooldownCircles() {
+    if (!cooldownCanvas || !cooldownCtx) return;
+
+    // Clear canvas
+    cooldownCtx.clearRect(0, 0, cooldownCanvas.width, cooldownCanvas.height);
+
+    if (!window.fireworks || !window.fireworks.started) {
+        requestAnimationFrame(animateCooldownCircles);
+        return;
+    }
+
+    const now = Date.now();
+
+    // Get user's rank to calculate opacity (lower ranks = more transparent)
+    const tierInfo = window.tierSystem?.getUserTier();
+    const userRank = tierInfo?.rank || 50; // Default to middle rank if not available
+
+    // Calculate opacity based on rank (1-100 scale)
+    // Rank 1 (king) = 0.9 opacity (very visible)
+    // Rank 50 (middle) = 0.5 opacity (medium)
+    // Rank 100 (lowest) = 0.2 opacity (subtle)
+    const rankOpacity = 0.9 - ((userRank - 1) / 99) * 0.7; // Linear scale from 0.9 to 0.2
+
+    // Inner silver circle - Regular shot cooldown (everyone)
+    if (!regularShotReady) {
+        const remaining = Math.max(0, regularShotCooldownEndTime - now);
+        const progress = 1 - (remaining / REGULAR_SHOT_COOLDOWN);
+
+        const innerRadius = 30;
+        const lineWidth = 4;
+
+        cooldownCtx.save();
+        cooldownCtx.globalAlpha = rankOpacity; // Use rank-based opacity
+
+        // Background circle (dark)
+        cooldownCtx.beginPath();
+        cooldownCtx.arc(actualMouseX, actualMouseY, innerRadius, 0, Math.PI * 2);
+        cooldownCtx.strokeStyle = `rgba(100, 100, 100, ${0.3 * rankOpacity})`; // Scale background too
+        cooldownCtx.lineWidth = lineWidth;
+        cooldownCtx.stroke();
+
+        // Progress arc (silver/white glow)
+        cooldownCtx.beginPath();
+        cooldownCtx.arc(actualMouseX, actualMouseY, innerRadius, -Math.PI / 2, (-Math.PI / 2) + (progress * Math.PI * 2));
+        cooldownCtx.strokeStyle = '#e0e0e0';
+        cooldownCtx.lineWidth = lineWidth;
+        cooldownCtx.shadowBlur = 10 * rankOpacity; // Scale glow with opacity
+        cooldownCtx.shadowColor = '#ffffff';
+        cooldownCtx.stroke();
+
+        cooldownCtx.restore();
+    }
+
+    // Outer gold circle - Big shot cooldown (king only)
+    const isKing = isKingOfTheHill();
+    if (isKing && !bigShotReady) {
+        const remaining = Math.max(0, bigShotCooldownEndTime - now);
+        const progress = 1 - (remaining / 30000);
+
+        const outerRadius = 50;
+        const lineWidth = 5;
+
+        cooldownCtx.save();
+        cooldownCtx.globalAlpha = 0.9;
+
+        // Background circle (dark gold)
+        cooldownCtx.beginPath();
+        cooldownCtx.arc(actualMouseX, actualMouseY, outerRadius, 0, Math.PI * 2);
+        cooldownCtx.strokeStyle = 'rgba(255, 215, 0, 0.2)';
+        cooldownCtx.lineWidth = lineWidth;
+        cooldownCtx.stroke();
+
+        // Progress arc (golden glow)
+        cooldownCtx.beginPath();
+        cooldownCtx.arc(actualMouseX, actualMouseY, outerRadius, -Math.PI / 2, (-Math.PI / 2) + (progress * Math.PI * 2));
+        cooldownCtx.strokeStyle = '#FFD700';
+        cooldownCtx.lineWidth = lineWidth;
+        cooldownCtx.shadowBlur = 15;
+        cooldownCtx.shadowColor = '#FFA500';
+        cooldownCtx.stroke();
+
+        cooldownCtx.restore();
+    }
+
+    requestAnimationFrame(animateCooldownCircles);
+}
+
+// Emoji visibility toggle
+let showRankEmoji = true; // Default to showing emojis
+
+function toggleRankEmoji() {
+    const checkbox = document.getElementById('showRankEmoji');
+    showRankEmoji = checkbox?.checked ?? true;
+    localStorage.setItem('showRankEmoji', showRankEmoji);
+    console.log('Rank emoji visibility:', showRankEmoji ? 'ON' : 'OFF');
+}
+
+// Load emoji preference on startup
+function loadEmojiPreference() {
+    const saved = localStorage.getItem('showRankEmoji');
+    if (saved !== null) {
+        showRankEmoji = saved === 'true';
+        const checkbox = document.getElementById('showRankEmoji');
+        if (checkbox) {
+            checkbox.checked = showRankEmoji;
+        }
+    }
+}
+
+// Call on page load
+setTimeout(loadEmojiPreference, 100);
+
+// Make functions globally accessible
+window.saveName = saveName;
+window.updateLeaderboard = updateLeaderboard;
+window.startCooldownTimer = startCooldownTimer;
+window.updateCannonCharCount = updateCannonCharCount;
+window.toggleRankEmoji = toggleRankEmoji;
+
+// Initialize cannon tracking and cooldown canvas on load (after all functions are defined)
+initCannonTracking();
+initCooldownCanvas();
